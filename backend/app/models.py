@@ -12,7 +12,7 @@ class Project(Base):
     description = Column(String(255))  # Added length to String
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    owner = Column(String(255))  # Added length to String
+    project_owner = Column(String(255))  # Added length to String
 
     tasks = relationship("Task", back_populates="project")
 
@@ -26,7 +26,7 @@ class Task(Base):
     due_date = Column(DateTime)
     status = Column(String(255))  # Added length to String
     project_id = Column(Integer, ForeignKey("projects.project_id"))
-    owner = Column(String(255))  # Added length to String
+    task_owner = Column(String(255))  # Added length to String
     
     project = relationship("Project", back_populates="tasks")
     employees = relationship("EmployeeTask", back_populates="task")
@@ -38,6 +38,7 @@ class Employee(Base):
     
     employee_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))  # Added length to String
+    email_id = Column(String(255))
     role = Column(String(255))  # Added length to String
 
     tasks = relationship("EmployeeTask", back_populates="employee")
@@ -52,3 +53,10 @@ class EmployeeTask(Base):
     
     employee = relationship("Employee", back_populates="tasks")
     task = relationship("Task", back_populates="employees")
+
+# Employee-Project relation table
+class EmployeeProject(Base):
+    __tablename__ = "employee_project"
+
+    project_id = Column(Integer, ForeignKey("projects.project_id"), primary_key=True)
+    employee_id = Column(Integer, ForeignKey("employee.employee_id"), primary_key=True)

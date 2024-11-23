@@ -1,7 +1,7 @@
 # schemas.py
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 
 # Pydantic model for Project
@@ -10,7 +10,8 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     start_date: datetime
     end_date: datetime
-    owner: str
+    project_owner: str
+    employee_ids: List[int]  # List of employee IDs to assign to the project
 
 class ProjectCreate(ProjectBase):
     pass
@@ -26,8 +27,9 @@ class Project(ProjectBase):
 class TaskBase(BaseModel):
     description: str
     due_date: datetime
+    task_owner: str
     status: str
-    owner: str
+    employee_ids: List[int]
 
 class TaskCreate(TaskBase):
     pass
@@ -43,6 +45,7 @@ class Task(TaskBase):
 # Pydantic model for Employee
 class EmployeeBase(BaseModel):
     name: str
+    email_id: str
     role: str
 
 class EmployeeCreate(EmployeeBase):
