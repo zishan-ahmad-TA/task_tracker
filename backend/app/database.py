@@ -1,16 +1,21 @@
-# database.py
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-# MySQL connection string
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/task_tracker_db"
+load_dotenv()
 
-# Create the SQLAlchemy engine to connect to MySQL
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={})
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Create a session local to handle DB transactions
+if not SQLALCHEMY_DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set!")
+
+try:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+except Exception as e:
+    raise RuntimeError(f"Failed to connect to the database: {e}")
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class for defining models
 Base = declarative_base()
