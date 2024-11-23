@@ -1,17 +1,34 @@
-# main.py
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject  # SQLAlchemy model
-from schemas import Project, ProjectCreate, Task, TaskCreate, Employee, EmployeeCreate # Pydantic models
+from contextlib import asynccontextmanager
+from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject  # SQLAlchemy models
+from schemas import Project, ProjectCreate, Task, TaskCreate, Employee, EmployeeCreate  # Pydantic models
 from database import SessionLocal, engine, Base
+from sqlalchemy.exc import OperationalError
+from sqlalchemy import inspect
 
-# Create tables in the database (run this once to initialize)
-# Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        if not tables:
+            Base.metadata.create_all(bind=engine)
+            print("Database and schema initialized successfully.")
+        else:
+            print("Database schema already exists.")
+    except OperationalError as e:
+        print("Database connection failed or schema is missing.")
+        print(f"Error details: {str(e)}")
+    
+    yield
+    print("Application shutting down.")
 
-app = FastAPI()
 
-# Dependency to get the database session
+app = FastAPI(lifespan=lifespan)
+
+
 def get_db():
     db = SessionLocal()
     try:
