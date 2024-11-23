@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from contextlib import asynccontextmanager
 from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject  # SQLAlchemy models
-from schemas import Project, ProjectCreate, Task, TaskCreate, Employee, EmployeeCreate  # Pydantic models
+from schemas import Project, ProjectCreate, Task, TaskCreate, Employee, EmployeeCreate
+from auth import auth_router
 from database import SessionLocal, engine, Base
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import inspect
@@ -27,6 +28,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(auth_router)
 
 
 def get_db():
@@ -36,23 +38,6 @@ def get_db():
     finally:
         db.close()
 
-
-#############################################################################
-
-# # Create a new project
-# @app.post("/projects/", response_model=Project)  # Use Pydantic Project model for response
-# async def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
-#     db_project = DBProject(
-#         name=project.name,
-#         description=project.description,
-#         start_date=project.start_date,
-#         end_date=project.end_date,
-#         project_owner=project.project_owner,
-#     )
-#     db.add(db_project)
-#     db.commit()
-#     db.refresh(db_project)
-#     return db_project  # FastAPI will use the Project Pydantic model for serialization
 
 # Create a new project with assigned employees
 @app.post("/projects/", response_model=Project)
@@ -141,25 +126,6 @@ async def update_project(project_id: int, project: ProjectCreate, db: Session = 
 
     return db_project  # Return the updated project
 
-
-#####################################################################################
-
-
-
-# # Create a new task
-# @app.post("/tasks/", response_model=Task)
-# async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
-#     db_task = DBTask(
-#         description=task.description,
-#         due_date=task.due_date,
-#         status="not started",
-#         task_owner=task.owner,
-#         project_id=task.project_id
-#     )
-#     db.add(db_task)
-#     db.commit()
-#     db.refresh(db_task)
-#     return db_task
 
 # Create a new task for a list of employees
 @app.post("/tasks/", response_model=Task)
@@ -263,8 +229,6 @@ async def delete_task(task_id: int, db: Session = Depends(get_db)):
 
     return db_task
 
-
-########################################################################################
 
 # Create an Employee
 @app.post("/employees/", response_model=Employee)
