@@ -5,7 +5,17 @@
 Create a file named `.env` in the root of your project directory and add the following line:
 
 ```env
+# Database Configuration
 DATABASE_URL=mysql+pymysql://username:password@localhost:3306/db_name
+
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=client_id
+GOOGLE_CLIENT_SECRET=client_secret
+GOOGLE_REDIRECT_URI=server_url/callback
+
+# Pipenv Configuration
+PIPENV_VENV_IN_PROJECT=1
+PIPENV_VERBOSITY=-1
 ```
 
 Replace `username`, `password`, and `db_name` with your actual MySQL database credentials.
