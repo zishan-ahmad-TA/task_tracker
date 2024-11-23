@@ -10,6 +10,7 @@ sqlalchemy = "*"
 python-dotenv = "*"
 uvicorn = "*"
 pymysql = "*"
+jwt = "*"
 
 [dev-packages]
 
