@@ -3,14 +3,17 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 from contextlib import asynccontextmanager
-from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject  # SQLAlchemy models
-from schemas import Project, ProjectCreate, Task, TaskCreate, Employee, EmployeeCreate
+from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject 
+from schemas import ProjectCreate, ProjectResponse, Task, TaskCreate, Employee, EmployeeCreate, ManagerResponse, EmployeeResponse, RoleUpdateRequest
 from auth import auth_router
 from database import SessionLocal, engine, Base
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import inspect
 from jose import jwt, JWTError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from auth import verify_jwt
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,92 +79,296 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     
-# Create a new project with assigned employees
-@app.post("/projects/", response_model=Project)
-async def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
-    # Step 1: Create the project
-    db_project = DBProject(
-        name=project.name,
-        description=project.description,
-        start_date=project.start_date,
-        end_date=project.end_date,
-        project_owner=project.project_owner
+
+# Get all projects (ADMIN)
+@app.get("/projects/", response_model=List[ProjectResponse])
+async def get_projects(
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        projects = db.query(DBProject).all()
+        project_list = []
+
+        for project in projects:
+            # Fetch the project owner
+            project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
+            if not project_owner:
+                raise HTTPException(status_code=404, detail=f"Project owner with ID {project.project_owner_id} not found")
+
+            # Fetch managers
+            managers = db.query(DBEmployee).join(EmployeeProject).filter(
+                EmployeeProject.project_id == project.project_id, DBEmployee.role == "manager"
+            ).all()
+
+            # Fetch employees
+            employees = db.query(DBEmployee).join(EmployeeProject).filter(
+                EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
+            ).all()
+
+            # Add project details to the response list
+            project_list.append({
+                "project_name": project.name,
+                "description": project.description,
+                "start_date": project.start_date,
+                "end_date": project.end_date,
+                "project_owner_id": project.project_owner_id,
+                "project_owner_name": project_owner.name,
+                "managers": [manager.employee_id for manager in managers],
+                "employees": [employee.employee_id for employee in employees],
+            })
+
+        return project_list
+
+    except HTTPException as e:
+        # Explicitly raised HTTPExceptions are returned as-is
+        raise e
+    except Exception as e:
+        # Catch other unexpected errors
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+
+# Create a new project with assigned managers and employees (ADMIN)
+@app.post("/projects/", response_model=ProjectResponse)
+async def create_project(
+    project: ProjectCreate,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Step 1: Create the project
+        db_project = DBProject(
+            name=project.project_name,
+            description=project.description,
+            start_date=project.start_date,
+            end_date=project.end_date,
+            project_owner_id=project.project_owner_id,
+        )
+        db.add(db_project)
+        db.commit()
+        db.refresh(db_project)
+
+        # Step 2: Assign managers to the project
+        for manager_id in project.managers:
+            manager = db.query(DBEmployee).filter(DBEmployee.employee_id == manager_id, DBEmployee.role == "manager").first()
+            if not manager:
+                raise HTTPException(status_code=404, detail=f"Manager with ID {manager_id} not found")
+            db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=manager_id)
+            db.add(db_employee_project)
+
+        # Step 3: Assign employees to the project
+        for employee_id in project.employees:
+            employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
+            if not employee:
+                raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
+            db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=employee_id)
+            db.add(db_employee_project)
+
+        db.commit()
+
+        # Step 4: Return a minimal response (or success message)
+        return {
+            "project_id": db_project.project_id,
+            "message": "Project created successfully"
+        }
+
+    except HTTPException as e:
+        raise e  
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+    
+# Update Project by ID(ADMIN)
+@app.put("/projects/{project_id}", response_model=ProjectResponse)
+async def update_project(
+    project_id: int,
+    project: ProjectCreate,  # Pydantic model for project creation
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Only admins can update projects
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch the existing project by project_id
+        db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
+
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Update the project fields
+        db_project.name = project.project_name
+        db_project.description = project.description
+        db_project.start_date = project.start_date
+        db_project.end_date = project.end_date
+        db_project.project_owner_id = project.project_owner_id  # Ensure the owner is valid
+
+        # Commit the changes to the database
+        db.commit()
+        db.refresh(db_project)
+
+        # Return the updated project details
+        return {
+            "project_name": db_project.name,
+            "description": db_project.description,
+            "start_date": db_project.start_date,
+            "end_date": db_project.end_date,
+            "project_owner_id": db_project.project_owner_id,
+            "project_owner_name": user.name,  # Assuming the creator's name is the project owner
+            "managers": [manager.employee_id for manager in db_project.managers],
+            "employees": [employee.employee_id for employee in db_project.employees],
+        }
+
+    except HTTPException as e:
+        raise e  # Return explicitly raised HTTP exceptions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+#Delete Project by ID (ADMIN) 
+@app.delete("/projects/{project_id}", response_model=dict)
+async def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Only admins can delete projects
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch the project by project_id
+        db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
+
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Delete the project from the database
+        db.delete(db_project)
+        db.commit()
+
+        # Return success message
+        return {"message": f"Project with ID {project_id} has been deleted successfully"}
+
+    except HTTPException as e:
+        raise e  # Return explicitly raised HTTP exceptions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Get all managers (ADMIN)
+@app.get("/managers/", response_model=List[ManagerResponse])
+async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
+    # Only admins can view all managers
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch all managers from the database
+        managers = db.query(DBEmployee).filter(DBEmployee.role == "manager").all()
+
+        # If no managers are found
+        if not managers:
+            raise HTTPException(status_code=404, detail="No managers found")
+
+        return managers
+
+    except HTTPException as e:
+        raise e  # Explicitly raised HTTPExceptions are returned as-is
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Get all employees (ADMIN)
+@app.get("/employees/", response_model=List[EmployeeResponse])
+async def get_all_employees(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
+    # Only admins can view all employees
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch all employees from the database
+        employees = db.query(DBEmployee).all()
+
+        # If no employees are found
+        if not employees:
+            raise HTTPException(status_code=404, detail="No employees found")
+
+        return employees
+
+    except HTTPException as e:
+        raise e  # Explicitly raised HTTPExceptions are returned as-is
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Change Roles (ADMIN)
+@app.put("/employees/{employee_id}/role", response_model=EmployeeResponse)
+async def update_employee_role(
+    employee_id: int,
+    role_update: RoleUpdateRequest,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Only admins can update employee roles
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch the employee from the database
+        employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
+
+        if not employee:
+            raise HTTPException(status_code=404, detail="Employee not found")
+
+        # Validate the new role
+        if role_update.new_role not in ["manager", "employee"]:
+            raise HTTPException(status_code=400, detail="Invalid role. Must be 'manager' or 'employee'.")
+
+        # Update the employee's role
+        employee.role = role_update.new_role
+
+        # Commit the change to the database
+        db.commit()
+        db.refresh(employee)
+
+        # Return the updated employee details
+        return {
+            "employee_id": employee.employee_id,
+            "name": employee.name,
+            "role": employee.role
+        }
+
+    except HTTPException as e:
+        raise e  # Return explicitly raised HTTPExceptions as-is
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Logout
+@app.post("/logout", response_model=dict)
+async def logout(response: RedirectResponse):
+    
+    response.set_cookie(
+        key="access_token", 
+        value="", 
+        max_age=0,  # Expire the cookie
+        httponly=True,  # Make sure it's HTTP-only to prevent JS access
+        expires=0  # Set expires to 0, which removes the cookie
     )
-    db.add(db_project)
-    db.commit()
-    db.refresh(db_project)
 
-    # Step 2: Assign employees to the project
-    for employee_id in project.employee_ids:
-        # Check if the employee exists
-        db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
-        if not db_employee:
-            raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
-        
-        # Create the association in EmployeeProject table
-        db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=employee_id)
-        db.add(db_employee_project)
-
-    db.commit()
-
-    # Return the project details along with the assigned employees
-    return db_project
-
-# Get all projects
-@app.get("/projects/", response_model=List[Project])  # Use Pydantic Project model for response
-async def get_projects(db: Session = Depends(get_db)):
-    projects = db.query(DBProject).all()
-    return projects  # FastAPI will use the Project Pydantic model for serialization
-
-# Get all projects for a specific employee
-@app.get("/projects/employee/{employee_id}", response_model=List[Project])
-async def get_projects_for_employee(employee_id: int, db: Session = Depends(get_db)):
-    # Query projects associated with tasks assigned to the given employee
-    projects = db.query(DBProject).join(DBTask).join(EmployeeTask).filter(EmployeeTask.employee_id == employee_id).all()
-
-    if not projects:
-        raise HTTPException(status_code=404, detail="No projects found for this employee")
-
-    return projects
+    return RedirectResponse(url="http://localhost:5173/login")
 
 
-# Delete project by ID
-@app.delete("/projects/{project_id}", response_model=Project)
-async def delete_project(project_id: int, db: Session = Depends(get_db)):
-    # Fetch the project by ID
-    db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
-    
-    if db_project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # Delete the project
-    db.delete(db_project)
-    db.commit()
-
-    return db_project  # Return the deleted project (optional, for confirmation)
 
 
-# Update project by ID
-@app.put("/projects/{project_id}", response_model=Project)
-async def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db)):
-    # Fetch the project by ID
-    db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
-    
-    if db_project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    # Update the fields of the project
-    db_project.name = project.name
-    db_project.description = project.description
-    db_project.start_date = project.start_date
-    db_project.end_date = project.end_date
-    db_project.project_owner = project.project_owner
 
-    # Commit the changes to the database
-    db.commit()
-    db.refresh(db_project)
 
-    return db_project  # Return the updated project
+
+
+
 
 
 # Create a new task for a list of employees
