@@ -33,7 +33,8 @@ const AdminPage = () => {
   console.log(userDetails)
 
   return (
-    <Navbar navTitle="Dashboard"
+    <Navbar navTitle={`Welcome ${userDetails.name}!`}
+      navDesc="Ready to build the next big thing?"
       name={userDetails.name}
       email={userDetails.email_id}
       profileImage={userDetails.profile_image_url} />
