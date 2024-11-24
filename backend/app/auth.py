@@ -86,8 +86,6 @@ async def callback(code: str, db: Session = Depends(get_db)):
     jwt_payload = {
         "sub": sub, 
         "employee_id": user.employee_id,
-        "email": email,
-        "name": name,
         "exp": (datetime.now(timezone.utc) + timedelta(days=1)).timestamp(), 
     }
     jwt_token = jwt.encode(jwt_payload, SECRET_KEY, algorithm=ALGORITHM)
