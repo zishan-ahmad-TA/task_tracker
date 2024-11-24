@@ -6,22 +6,29 @@ from typing import List, Optional
 
 # Pydantic model for Project
 class ProjectBase(BaseModel):
-    name: str
+    project_name: str
     description: Optional[str] = None
     start_date: datetime
     end_date: datetime
-    project_owner: str
-    employee_ids: List[int]  # List of employee IDs to assign to the project
+    project_owner_id: int
 
 class ProjectCreate(ProjectBase):
-    pass
+    managers: List[int]  
+    employees: List[int]  
 
 class Project(ProjectBase):
     project_id: int
 
     class Config:
-        orm_mode = True  # This is needed for FastAPI to convert SQLAlchemy models into Pydantic models
+        orm_mode = True  
 
+class ProjectResponse(ProjectBase):
+    project_owner: str
+    manager_ids: List[int]
+    employee_ids: List[int]
+
+    class Config:
+        orm_mode = True
 
 # Pydantic model for Task
 class TaskBase(BaseModel):
@@ -56,3 +63,23 @@ class Employee(EmployeeBase):
 
     class Config:
         orm_mode = True
+
+class ManagerResponse(BaseModel):
+    employee_id: int
+    name: str
+    role: str
+
+    class Config:
+        orm_mode = True
+
+class EmployeeResponse(BaseModel):
+    employee_id: int
+    name: str
+    role: str
+
+    class Config:
+        orm_mode = True
+
+class RoleUpdateRequest(BaseModel):
+    new_role: str  
+
