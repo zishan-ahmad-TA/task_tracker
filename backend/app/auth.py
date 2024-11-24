@@ -84,7 +84,6 @@ async def callback(code: str, db: Session = Depends(get_db)):
         user = new_user
 
     jwt_payload = {
-        "sub": sub, 
         "employee_id": user.employee_id,
         "exp": (datetime.now(timezone.utc) + timedelta(days=1)).timestamp(), 
     }
