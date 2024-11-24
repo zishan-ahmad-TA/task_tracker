@@ -1,4 +1,4 @@
-.loginPage {
+.LoginPage {
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -9,7 +9,7 @@
   background-repeat: no-repeat;
 }
 
-.loginPage::before {
+.LoginPage::before {
   content: "";
   position: absolute;
   top: 0;
@@ -22,7 +22,7 @@
 }
 
 
-.loginContainer {
+.LoginContainer {
   z-index: 2;
   position: absolute;
   height: 250px;
@@ -37,26 +37,26 @@
 }
 
 
-.heading {
+.Heading {
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 10px;
   color: var(--foreground);
 }
 
-.description {
+.Description {
   font-size: 16px;
   color: var(--muted-foreground);
   margin-bottom: 20px;
 }
 
-.subheading {
+.Subheading {
   font-size: 14px;
   color: var(--muted-foreground);
   margin-bottom: 15px;
 }
 
-.googleSSOButton {
+.GoogleSSOButton {
   background-color: #4285F4;
   color: #fff;
   font-size: 16px;
@@ -68,11 +68,11 @@
   transition: background-color 0.3s ease;
 }
 
-.googleSSOButton:hover {
+.GoogleSSOButton:hover {
   background-color: #357ae8;
 }
 
-.footerText {
+.FooterText {
   font-size: 14px;
   color: var(--foreground);
   margin-top: 20px;

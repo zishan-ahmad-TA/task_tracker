@@ -6,20 +6,20 @@ const Login = () => {
   };
 
   return (
-    <div className={styles.loginPage}>
-      <div className={styles.loginContainer}>
-        <h2 className={styles.heading}>Welcome Back!</h2>
-        <p className={styles.description}>
+    <div className={styles.LoginPage}>
+      <div className={styles.LoginContainer}>
+        <h2 className={styles.Heading}>Welcome Back!</h2>
+        <p className={styles.Description}>
           Your tasks, your way. Stay organized, stay on track. Let’s dive into
           your productivity journey.
         </p>
-        <p className={styles.subheading}>Sign in to continue</p>
+        <p className={styles.Subheading}>Sign in to continue</p>
 
-        <button className={styles.googleSSOButton} onClick={handleGoogleSignIn}>
+        <button className={styles.GoogleSSOButton} onClick={handleGoogleSignIn}>
           Sign In with Google
         </button>
 
-        <p className={styles.footerText}>
+        <p className={styles.FooterText}>
           Made with ❤️ by the team at Tiger Analytics.
         </p>
       </div>
