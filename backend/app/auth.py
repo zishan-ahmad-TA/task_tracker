@@ -2,11 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 import requests
 import os
+from jose import jwt
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from datetime import datetime, timedelta
-import jwt
+from datetime import datetime, timedelta, timezone
 from models import Employee as DBEmployee
 
 def get_db():
@@ -65,38 +65,33 @@ async def callback(code: str, db: Session = Depends(get_db)):
     user_info = user_info_response.json()
     email = user_info.get("email")
     name = user_info.get("name")
-    sub = user_info.get("sub")  # Google unique user ID
+    sub = user_info.get("sub")
 
     if not email or not name:
         raise HTTPException(status_code=400, detail="Incomplete user info from Google")
 
-    # Step 3: Check if user exists in the database
     user = db.query(DBEmployee).filter(DBEmployee.email_id == email).first()
 
     if not user:
-        # Create a new user if not found
         new_user = DBEmployee(
             name=name, 
             email_id=email, 
-            role="employee"  # Default role as "employee"
+            role="employee"
         )
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         user = new_user
 
-    # Step 4: Generate a JWT
     jwt_payload = {
         "sub": sub, 
         "employee_id": user.employee_id,
         "email": email,
         "name": name,
-        "exp": datetime.now(datetime.timezone.utc) + timedelta(days=1),  # Token expires in 1 day
+        "exp": (datetime.now(timezone.utc) + timedelta(days=1)).timestamp(), 
     }
     jwt_token = jwt.encode(jwt_payload, SECRET_KEY, algorithm=ALGORITHM)
 
-    # Step 5: Redirect to frontend with the token
+    # Redirect to frontend with the token
     redirect_url = f"{FRONTEND_URL}/login?token={jwt_token}"
     return RedirectResponse(url=redirect_url)
-
-    
