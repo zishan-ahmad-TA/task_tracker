@@ -65,7 +65,8 @@ async def callback(code: str, db: Session = Depends(get_db)):
     user_info = user_info_response.json()
     email = user_info.get("email")
     name = user_info.get("name")
-    sub = user_info.get("sub")
+    profile_image_url = user_info.get("picture")
+    print(profile_image_url)
 
     if not email or not name:
         raise HTTPException(status_code=400, detail="Incomplete user info from Google")
@@ -76,7 +77,8 @@ async def callback(code: str, db: Session = Depends(get_db)):
         new_user = DBEmployee(
             name=name, 
             email_id=email, 
-            role="member"
+            role="member",
+            profile_image_url=profile_image_url
         )
         db.add(new_user)
         db.commit()

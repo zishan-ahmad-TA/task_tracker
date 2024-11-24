@@ -40,6 +40,7 @@ class Employee(Base):
     name = Column(String(255))  # Added length to String
     email_id = Column(String(255))
     role = Column(String(255))  # Added length to String
+    profile_image_url = Column(String(255), nullable=True)
 
     tasks = relationship("EmployeeTask", back_populates="employee")
 

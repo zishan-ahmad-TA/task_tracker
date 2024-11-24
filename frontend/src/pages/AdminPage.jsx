@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Navbar from '../components/shared/Navbar';
 
 const AdminPage = () => {
   const [userDetails, setUserDetails] = useState(null);
@@ -29,13 +30,13 @@ const AdminPage = () => {
     return <div>Loading...</div>;
   }
 
+  console.log(userDetails)
+
   return (
-    <div>
-      <h2>User Details</h2>
-      <p><strong>Name:</strong> {userDetails.name}</p>
-      <p><strong>Email:</strong> {userDetails.email_id}</p>
-      <p><strong>Role:</strong> {userDetails.role}</p>
-    </div>
+    <Navbar navTitle="Dashboard"
+      name={userDetails.name}
+      email={userDetails.email_id}
+      profileImage={userDetails.profile_image_url} />
   );
 };
 
