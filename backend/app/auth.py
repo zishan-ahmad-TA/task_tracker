@@ -76,7 +76,7 @@ async def callback(code: str, db: Session = Depends(get_db)):
         new_user = DBEmployee(
             name=name, 
             email_id=email, 
-            role="employee"
+            role="member"
         )
         db.add(new_user)
         db.commit()

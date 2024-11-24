@@ -1,5 +1,11 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
 import Login from "./components/shared/Login";
+import AdminPage from "./pages/AdminPage";
 
 const App = () => {
   return (
@@ -7,6 +13,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/home" element={<AdminPage />} />
       </Routes>
     </Router>
   );

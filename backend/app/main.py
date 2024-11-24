@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -8,6 +9,8 @@ from auth import auth_router
 from database import SessionLocal, engine, Base
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import inspect
+from jose import jwt, JWTError
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,8 +30,23 @@ async def lifespan(app: FastAPI):
     print("Application shutting down.")
 
 
-app = FastAPI(lifespan=lifespan)
+
+app = FastAPI(
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="*", 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router)
+
+SECRET_KEY = os.getenv("JWT_SECRET")  
+ALGORITHM = "HS256"
 
 
 def get_db():
@@ -38,7 +56,26 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/get-userdetails")
+async def get_user_details(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Token missing or invalid")
 
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        employee_id = payload.get("employee_id")
+        if employee_id is None:
+            raise HTTPException(status_code=400, detail="Invalid token")
+        
+        employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
+        if not employee:
+            raise HTTPException(status_code=404, detail="Employee not found")
+        
+        return employee
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
 # Create a new project with assigned employees
 @app.post("/projects/", response_model=Project)
 async def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
