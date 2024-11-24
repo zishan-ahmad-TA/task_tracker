@@ -49,11 +49,11 @@ async def callback(code: str, db: Session = Depends(get_db)):
         "grant_type": "authorization_code",
     }
 
-    response = requests.post(token_url, data=data)
-    if response.status_code != 200:
+    token_response = requests.post(token_url, data=data)
+    if token_response.status_code != 200:
         raise HTTPException(status_code=400, detail="Failed to fetch token")
 
-    token_info = response.json()
+    token_info = token_response.json()
     access_token = token_info.get("access_token")
 
     user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
@@ -92,6 +92,12 @@ async def callback(code: str, db: Session = Depends(get_db)):
     }
     jwt_token = jwt.encode(jwt_payload, SECRET_KEY, algorithm=ALGORITHM)
 
-    # Redirect to frontend with the token
-    redirect_url = f"{FRONTEND_URL}/login?token={jwt_token}"
-    return RedirectResponse(url=redirect_url)
+    redirect_response = RedirectResponse(url=f"{FRONTEND_URL}/home")
+    redirect_response.set_cookie(
+        key="access_token",
+        value=jwt_token,
+        httponly=True,
+        max_age=3600,  
+    )
+
+    return redirect_response

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 from contextlib import asynccontextmanager
@@ -161,7 +161,8 @@ async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
 # Get all tasks
 @app.get("/tasks/", response_model=List[Task])
-async def get_tasks(db: Session = Depends(get_db)):
+async def get_tasks(request: Request, db: Session = Depends(get_db)):
+    print(request.cookies)
     tasks = db.query(DBTask).all()
     return tasks
 
