@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from contextlib import asynccontextmanager
 from models import Project as DBProject, Task as DBTask, Employee as DBEmployee, EmployeeTask, EmployeeProject 
-from schemas import ProjectCreate, ProjectResponse, Task, TaskCreate, Employee, EmployeeCreate, ManagerResponse, EmployeeResponse, RoleUpdateRequest
+from schemas import *
 from auth import auth_router
 from database import SessionLocal, engine, Base
 from sqlalchemy.exc import OperationalError
@@ -121,6 +121,12 @@ async def get_projects(
                 "employees": [employee.employee_id for employee in employees],
             })
 
+        project_list.append({
+            "project_count": len(project),
+        })
+
+        print(project_list)
+
         return project_list
 
     except HTTPException as e:
@@ -197,6 +203,9 @@ async def update_project(
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
+
+        project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
+
         # Fetch the existing project by project_id
         db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
 
@@ -214,6 +223,25 @@ async def update_project(
         db.commit()
         db.refresh(db_project)
 
+        db.query(EmployeeProject).filter(EmployeeProject.project_id == project_id).delete()
+
+        for manager_id in project.managers:
+            manager = db.query(DBEmployee).filter(DBEmployee.employee_id == manager_id, DBEmployee.role == "manager").first()
+            if not manager:
+                raise HTTPException(status_code=404, detail=f"Manager with ID {manager_id} not found")
+            db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=manager_id)
+            db.add(db_employee_project)
+
+        for employee_id in project.employees:
+            employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
+            if not employee:
+                raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
+            db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=employee_id)
+            db.add(db_employee_project)
+
+        db.commit()
+        db.refresh(db_project)
+
         # Return the updated project details
         return {
             "project_name": db_project.name,
@@ -221,9 +249,9 @@ async def update_project(
             "start_date": db_project.start_date,
             "end_date": db_project.end_date,
             "project_owner_id": db_project.project_owner_id,
-            "project_owner_name": user.name,  # Assuming the creator's name is the project owner
-            "managers": [manager.employee_id for manager in db_project.managers],
-            "employees": [employee.employee_id for employee in db_project.employees],
+            "project_owner_name": project_owner.name,
+            "managers": [manager_id for manager_id in project.managers],
+            "employees": [employee_id for employee_id in project.employees],
         }
 
     except HTTPException as e:
@@ -262,7 +290,7 @@ async def delete_project(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all managers (ADMIN)
-@app.get("/managers/", response_model=List[ManagerResponse])
+@app.get("/managers/", response_model=ManagerListResponse)
 async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
     # Only admins can view all managers
     if user.role != "admin":
@@ -271,10 +299,13 @@ async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Dep
     try:
         # Fetch all managers from the database
         managers = db.query(DBEmployee).filter(DBEmployee.role == "manager").all()
+        
 
         # If no managers are found
         if not managers:
             raise HTTPException(status_code=404, detail="No managers found")
+        
+        managers.append({"managers.append":len(managers)})
 
         return managers
 
@@ -284,7 +315,7 @@ async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Dep
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all employees (ADMIN)
-@app.get("/employees/", response_model=List[EmployeeResponse])
+@app.get("/employees/", response_model=EmployeeListResponse)
 async def get_all_employees(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
     # Only admins can view all employees
     if user.role != "admin":
@@ -297,6 +328,8 @@ async def get_all_employees(db: Session = Depends(get_db), user: DBEmployee = De
         # If no employees are found
         if not employees:
             raise HTTPException(status_code=404, detail="No employees found")
+        
+        employees.append({"employee_length": len(employees)})
 
         return employees
 
