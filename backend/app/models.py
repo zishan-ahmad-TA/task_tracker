@@ -13,6 +13,7 @@ class Project(Base):
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     project_owner_id = Column(Integer)  # Added length to String
+    project_status = Column(String(255))
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete")
     employees = relationship("EmployeeProject", back_populates="project", cascade="all, delete")

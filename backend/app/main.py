@@ -84,15 +84,17 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
 @app.get("/projects/", response_model=ProjectListResponse)
 async def get_projects(
     db: Session = Depends(get_db),
-    user: DBEmployee = Depends(verify_jwt)
+    #user: DBEmployee = Depends(verify_jwt)
 ):
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    #if user.role != "admin":
+     #   raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
+        # Fetch all projects from the database
         projects = db.query(DBProject).all()
-        project_list = []
 
+        # Prepare the project response list
+        project_list = []
         for project in projects:
             # Fetch the project owner
             project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
@@ -109,31 +111,32 @@ async def get_projects(
                 EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
             ).all()
 
-            # Add project details to the response list
-            project_list.append({
-                "project_name": project.name,
-                "description": project.description,
-                "start_date": project.start_date,
-                "end_date": project.end_date,
-                "project_owner_id": project.project_owner_id,
-                "project_owner_name": project_owner.name,
-                "managers": [manager.employee_id for manager in managers],
-                "employees": [employee.employee_id for employee in employees],
-            })
+            # Append project details in the format required by ProjectResponse
+            project_list.append(ProjectResponse(
+                project_name=project.name,
+                description=project.description,
+                start_date=project.start_date,
+                end_date=project.end_date,
+                project_status=project.project_status,
+                project_owner_id=project.project_owner_id,
+                project_owner_name=project_owner.name,
+                manager_names=[manager.name for manager in managers],  # Use manager names
+                employee_names=[employee.name for employee in employees]  # Use employee names
+            ))
 
-        project_list.append({
-            "project_count": len(project),
-        })
-
-        return project_list
+        # Return the response in the format required by ProjectListResponse
+        return ProjectListResponse(
+            projects=project_list,
+            project_count=len(projects)
+        )
 
     except HTTPException as e:
         # Explicitly raised HTTPExceptions are returned as-is
         raise e
     except Exception as e:
         # Catch other unexpected errors
+        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
-
 
 # Create a new project with assigned managers and employees (ADMIN)
 @app.post("/projects/", response_model=ProjectResponse)

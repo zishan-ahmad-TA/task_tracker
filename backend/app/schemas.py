@@ -10,7 +10,9 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     start_date: datetime
     end_date: datetime
+    project_status: str
     project_owner_id: int
+
 
 class ProjectCreate(ProjectBase):
     managers: List[int]  
