@@ -72,6 +72,10 @@ class ManagerResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class ManagerListResponse(BaseModel):
+    managers: List[ManagerResponse]
+    manager_count: int
+
 class EmployeeResponse(BaseModel):
     employee_id: int
     name: str
@@ -80,6 +84,12 @@ class EmployeeResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class EmployeeListResponse(BaseModel):
+    employees: List[EmployeeResponse]
+    employee_count: int
+
 class RoleUpdateRequest(BaseModel):
     new_role: str  
+
+
 
