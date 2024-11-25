@@ -1,4 +1,3 @@
-import React from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import styles from "./HoverCard.module.css";
 import AvatarComponent from "./Avatar";

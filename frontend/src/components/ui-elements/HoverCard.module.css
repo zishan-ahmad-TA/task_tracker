@@ -1,7 +1,8 @@
 .HoverCardContent {
 	border-radius: 6px;
+	margin: 0 20px;
 	padding: 20px;
-	width: 250px;
+	width: 300px;
 	background-color: white;
 	box-shadow:
 		hsl(206 22% 7% / 35%) 0px 10px 38px -10px,
