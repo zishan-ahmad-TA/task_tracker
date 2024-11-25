@@ -16,6 +16,8 @@ const AdminPage = () => {
   const [projects, setProjects] = useState([]);
   const [isAddProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [employee, setEmployees] = useState([]);
+  const [managers, setManagers] = useState([]);
+  const [members, setMembers] = useState([]);
   const [totalProjects, setTotalProjects] = useState(0);
   const [totalEmployee, setTotalEmployee] = useState([]);
 
@@ -51,7 +53,14 @@ const AdminPage = () => {
   const fetchEmployees = async () => {
     try {
       const employeeData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/employees`);
-      setEmployees(employeeData.employees)
+      const employees = employeeData.employees;
+      const members = employees.filter(emp => emp.role === 'member');
+      const managers = employees.filter(emp => emp.role === 'manager');
+
+      setEmployees(employeeData.employees);
+      setMembers(members);
+      setManagers(managers);
+      console.log(managers);
       setTotalEmployee(employeeData.employee_count);
 
     } catch (err) {
@@ -84,7 +93,7 @@ const AdminPage = () => {
       <DialogComponent open={isAddProjectModalOpen} onOpenChange={closeAddProject}
         title="Add new Project" description=""
         buttonText="Add Project" buttonColor="#E59178">
-        <CreateProjectForm />
+        <CreateProjectForm members={members} managers={managers}/>
       </DialogComponent>
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
@@ -115,7 +124,7 @@ const AdminPage = () => {
         </div>
 
         <div className={styles.ProjectColumn}>
-          <ProjectCard projects={projects} onDeleteSuccess={onDeleteSuccess} />
+          <ProjectCard projects={projects} onDeleteSuccess={onDeleteSuccess} members={members} managers={managers} />
         </div>
       </div>
     </>

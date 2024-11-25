@@ -261,6 +261,7 @@ async def update_project(
             "description": db_project.description,
             "start_date": db_project.start_date,
             "end_date": db_project.end_date,
+            #Require addition of project status (in the table as well)
             "project_owner_id": db_project.project_owner_id,
             "project_owner_name": project_owner.name,
             "managers": [manager_id for manager_id in project.managers],
