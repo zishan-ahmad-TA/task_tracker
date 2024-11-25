@@ -5,7 +5,12 @@ import { FaCircle } from "react-icons/fa";
 import { MdOutlinePublishedWithChanges } from "react-icons/md";
 import TooltipComponent from '../ui-elements/Tooltip';
 
-const ListCard = ({ label = "", value = "To Track tasks", status = "", showStatusIcon = true, isWorkItems = true }) => {
+const ListCard = ({
+    label = "", value = "To Track tasks",
+    status = "",
+    showStatusIcon = true, isWorkItems = true,
+    onDeleteIconClick = () => { }
+}) => {
     const statusColor = status === "Closed" ? "#E59178" : "#82C468";
 
     return (
@@ -32,16 +37,18 @@ const ListCard = ({ label = "", value = "To Track tasks", status = "", showStatu
                             </TooltipComponent>
 
                             <TooltipComponent tooltipText="Delete">
+                                <div onClick={onDeleteIconClick}>
                                 <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
-                            </TooltipComponent>
-                        </> :
-                        <TooltipComponent tooltipText="Change Roles">
-                            < MdOutlinePublishedWithChanges style={{ cursor: 'pointer' }} />
+                            </div>
                         </TooltipComponent>
+                </> :
+                <TooltipComponent tooltipText="Change Roles">
+                    < MdOutlinePublishedWithChanges style={{ cursor: 'pointer' }} />
+                </TooltipComponent>
                     }
-                </div>
             </div>
         </div>
+        </div >
     )
 }
 
