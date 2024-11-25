@@ -23,9 +23,9 @@ class Project(ProjectBase):
         orm_mode = True  
 
 class ProjectResponse(ProjectBase):
-    project_owner: str
-    manager_ids: List[int]
-    employee_ids: List[int]
+    project_owner_name: str
+    manager_ids: Optional[List[int]] = []
+    employee_ids: Optional[List[int]] = []
 
     class Config:
         orm_mode = True

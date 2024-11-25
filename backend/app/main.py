@@ -255,6 +255,7 @@ async def update_project(
     except HTTPException as e:
         raise e  # Return explicitly raised HTTP exceptions
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 #Delete Project by ID (ADMIN) 
@@ -285,6 +286,7 @@ async def delete_project(
     except HTTPException as e:
         raise e  # Return explicitly raised HTTP exceptions
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all managers (ADMIN)

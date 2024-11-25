@@ -14,7 +14,8 @@ class Project(Base):
     end_date = Column(DateTime)
     project_owner_id = Column(Integer)  # Added length to String
 
-    tasks = relationship("Task", back_populates="project")
+    tasks = relationship("Task", back_populates="project", cascade="all, delete")
+    employees = relationship("EmployeeProject", back_populates="project", cascade="all, delete")
 
 
 # Tasks table
@@ -29,7 +30,7 @@ class Task(Base):
     task_owner_id = Column(Integer)  # Added length to String
     
     project = relationship("Project", back_populates="tasks")
-    employees = relationship("EmployeeTask", back_populates="task")
+    employees = relationship("EmployeeTask", back_populates="task", cascade="all, delete") 
 
 
 # Employee table
@@ -42,7 +43,8 @@ class Employee(Base):
     role = Column(String(255))  # Added length to String
     profile_image_url = Column(String(255), nullable=True)
 
-    tasks = relationship("EmployeeTask", back_populates="employee")
+    tasks = relationship("EmployeeTask", back_populates="employee", cascade="all, delete")
+    projects = relationship("EmployeeProject", back_populates="employee", cascade="all, delete") 
 
 
 # Employee-Task relation table
@@ -61,3 +63,6 @@ class EmployeeProject(Base):
 
     project_id = Column(Integer, ForeignKey("projects.project_id"), primary_key=True)
     employee_id = Column(Integer, ForeignKey("employee.employee_id"), primary_key=True)
+
+    project = relationship("Project", back_populates="employees")
+    employee = relationship("Employee", back_populates="projects")
