@@ -10,11 +10,16 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     start_date: datetime
     end_date: datetime
+    project_status: str
     project_owner_id: int
 
-class ProjectCreate(ProjectBase):
-    managers: List[int]  
-    employees: List[int]  
+class ProjectCreate(BaseModel):
+    project_name: str
+    description: Optional[str] = None
+    start_date: datetime
+    end_date: datetime
+    managers: Optional[List[int]] = []  
+    employees: Optional[List[int]] = []  
 
 class Project(ProjectBase):
     project_id: int
@@ -24,8 +29,8 @@ class Project(ProjectBase):
 
 class ProjectResponse(ProjectBase):
     project_owner: str
-    manager_ids: List[int]
-    employee_ids: List[int]
+    manager_names: List[str]
+    employee_names: List[str]
 
     class Config:
         orm_mode = True
@@ -74,7 +79,7 @@ class ManagerResponse(BaseModel):
     role: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ManagerListResponse(BaseModel):
     managers: List[ManagerResponse]
@@ -86,7 +91,7 @@ class EmployeeResponse(BaseModel):
     role: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True  
 
 class EmployeeListResponse(BaseModel):
     employees: List[EmployeeResponse]
