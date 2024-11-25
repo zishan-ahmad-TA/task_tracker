@@ -6,6 +6,7 @@ import { FaUsers } from "react-icons/fa";
 import { VscFileSymlinkDirectory } from "react-icons/vsc";
 import ProjectCard from "../components/admin/ProjectCard";
 import TeamCard from "../components/admin/TeamCard";
+import DialogComponent from "../components/ui-elements/Dialog";
 
 const AdminPage = () => {
   const [userDetails, setUserDetails] = useState(null);
@@ -45,6 +46,8 @@ const AdminPage = () => {
   return (
 
     <>
+
+      <DialogComponent />
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
         navDesc="Ready to build the next big thing?"
         name={userDetails.name}
