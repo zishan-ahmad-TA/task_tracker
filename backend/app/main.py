@@ -81,7 +81,7 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
     
 
 # Get all projects (ADMIN)
-@app.get("/projects/", response_model=List[ProjectResponse])
+@app.get("/projects/", response_model=ProjectListResponse)
 async def get_projects(
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
@@ -124,8 +124,6 @@ async def get_projects(
         project_list.append({
             "project_count": len(project),
         })
-
-        print(project_list)
 
         return project_list
 

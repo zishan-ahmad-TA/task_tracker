@@ -30,6 +30,10 @@ class ProjectResponse(ProjectBase):
     class Config:
         orm_mode = True
 
+class ProjectListResponse(BaseModel):
+    projects: List[ProjectResponse]
+    project_count: int
+
 # Pydantic model for Task
 class TaskBase(BaseModel):
     description: str
