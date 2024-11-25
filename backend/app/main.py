@@ -84,10 +84,10 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
 @app.get("/projects/", response_model=ProjectListResponse)
 async def get_projects(
     db: Session = Depends(get_db),
-    #user: DBEmployee = Depends(verify_jwt)
+    user: DBEmployee = Depends(verify_jwt)
 ):
-    #if user.role != "admin":
-     #   raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
         # Fetch all projects from the database
