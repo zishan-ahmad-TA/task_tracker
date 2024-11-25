@@ -141,7 +141,7 @@ async def get_projects(
 
 
 # Create a new project with assigned managers and employees (ADMIN)
-@app.post("/projects/", response_model=ProjectResponse)
+@app.post("/projects/", response_model=ProjectResponse2)
 async def create_project(
     project: ProjectCreate,
     db: Session = Depends(get_db),
@@ -162,9 +162,6 @@ async def create_project(
             project_owner_id=user.employee_id,  # Extract owner from logged-in user
             project_status="In Progress"  # Default project status
         )
-        db.add(db_project)
-        db.commit()
-        db.refresh(db_project)
 
         # Step 2: Assign managers to the project
         for manager_id in project.managers:
@@ -182,17 +179,19 @@ async def create_project(
             db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=employee_id)
             db.add(db_employee_project)
 
+        db.add(db_project)
         db.commit()
+        db.refresh(db_project)
 
         # Step 4: Return the project details
-        return ProjectResponse(
+        return ProjectResponse2(
             project_name=db_project.name,
             description=db_project.description,
             start_date=db_project.start_date,
             end_date=db_project.end_date,
             project_status=db_project.project_status,
             project_owner_id=db_project.project_owner_id,
-            project_owner=user.name,  # Owner name from logged-in user
+            project_owner_name=user.name,  # Owner name from logged-in user
             manager_ids=project.managers,
             employee_ids=project.employees
         )
@@ -200,6 +199,7 @@ async def create_project(
     except HTTPException as e:
         raise e  
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
     
@@ -304,7 +304,7 @@ async def delete_project(
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-# Get all managers (ADMIN)
+
 # Get all managers (ADMIN)
 @app.get("/managers/", response_model=ManagerListResponse)
 async def get_all_managers(
@@ -343,11 +343,11 @@ async def get_all_managers(
 @app.get("/employees/", response_model=EmployeeListResponse)
 async def get_all_employees(
         db: Session = Depends(get_db), 
-        #user: DBEmployee = Depends(verify_jwt)
+        user: DBEmployee = Depends(verify_jwt)
     ):
     # Only admins can view all employees
-    #if user.role != "admin":
-     #  raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
         # Fetch all employees from the database
