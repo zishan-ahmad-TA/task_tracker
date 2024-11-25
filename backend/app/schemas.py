@@ -82,6 +82,7 @@ class Employee(EmployeeBase):
 class ManagerResponse(BaseModel):
     employee_id: int
     name: str
+    email_id: str
     role: str
 
     class Config:

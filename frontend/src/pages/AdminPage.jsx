@@ -11,12 +11,13 @@ import apiRequest from "../utils/apiRequest";
 import CreateProjectForm from "../components/admin/CreateProjectForm";
 
 const AdminPage = () => {
+  const [isLoading, setIsLoading] = useState(true);
   const [userDetails, setUserDetails] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isAddProjectModalOpen, setIsProjectModalOpen] = useState(false);
-
+  const [employee, setEmployees] = useState([]);
   const [totalProjects, setTotalProjects] = useState(0);
-  const [teamSize,] = useState(5);
+  const [totalEmployee, setTotalEmployee] = useState([]);
 
   const closeAddProject = () => {
     setIsProjectModalOpen(false);
@@ -26,18 +27,14 @@ const AdminPage = () => {
     fetchProjects();
   }
 
-  useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const userData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/get-userdetails`)
-        setUserDetails(userData);
-      } catch (err) {
-        console.error("Error fetching user details:", err);
-      }
-    };
-
-    fetchUserDetails();
-  }, []);
+  const fetchUserDetails = async () => {
+    try {
+      const userData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/get-userdetails`)
+      setUserDetails(userData);
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -50,13 +47,35 @@ const AdminPage = () => {
     }
   };
 
+
+  const fetchEmployees = async () => {
+    try {
+      const employeeData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/employees`);
+      setEmployees(employeeData.employees)
+      setTotalEmployee(employeeData.employee_count);
+
+    } catch (err) {
+      console.error("Error fetching projects", err);
+    }
+  };
+
   useEffect(() => {
-    fetchProjects();
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([fetchUserDetails(), fetchProjects(), fetchEmployees()]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, []);
 
 
 
-  if (!userDetails) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -65,8 +84,6 @@ const AdminPage = () => {
       <DialogComponent open={isAddProjectModalOpen} onOpenChange={closeAddProject}
         title="Add new Project" description=""
         buttonText="Add Project" buttonColor="#E59178">
-
-
         <CreateProjectForm />
       </DialogComponent>
 
@@ -89,11 +106,11 @@ const AdminPage = () => {
             <KpiCard title="Team Size"
               Icon={FaUsers}
               color="#82C468"
-              kpiValue={teamSize}
+              kpiValue={totalEmployee}
               buttonTitle="Manage team" />
           </div>
           <div className={styles.TeamRow}>
-            <TeamCard />
+            <TeamCard employeeData={employee} />
           </div>
         </div>
 
