@@ -4,12 +4,14 @@ import Navbar from '../components/shared/Navbar';
 import KpiCard from "../components/shared/KpiCard";
 import { FaUsers } from "react-icons/fa";
 import { VscFileSymlinkDirectory } from "react-icons/vsc";
+import ProjectCard from "../components/admin/ProjectCard";
+import TeamCard from "../components/admin/TeamCard";
 
 const AdminPage = () => {
   const [userDetails, setUserDetails] = useState(null);
 
-  const [totalProjects, ] = useState(100);
-  const [teamSize, ] = useState(5);
+  const [totalProjects,] = useState(100);
+  const [teamSize,] = useState(5);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -39,6 +41,7 @@ const AdminPage = () => {
 
   console.log(userDetails)
 
+
   return (
 
     <>
@@ -47,12 +50,21 @@ const AdminPage = () => {
         name={userDetails.name}
         email={userDetails.email_id}
         profileImage={userDetails.profile_image_url} />
-      <div className={styles.KpisContainer}>
+      <div className={styles.PageContent}>
+        <div className={styles.FirstColumn}>
+          <div className={styles.KpisContainer}>
+            <KpiCard title="Total Projects" Icon={VscFileSymlinkDirectory} color='#E59178' kpiValue={totalProjects} buttonTitle="Add new project" />
+            <KpiCard title="Team Size" Icon={FaUsers} color="#82C468" kpiValue={teamSize} buttonTitle="Manage team" />
+          </div>
+          <div className={styles.TeamRow}>
+            <TeamCard />
+          </div>
+        </div>
 
-        <KpiCard title="Total Projects" Icon={VscFileSymlinkDirectory} color='#E59178' kpiValue={totalProjects} buttonTitle="Add new project" />
-        <KpiCard title="Team Size" Icon={FaUsers} color="#82C468" kpiValue={teamSize} buttonTitle="Manage team" />
+        <div className={styles.ProjectColumn}>
+          <ProjectCard />
+        </div>
       </div>
-
     </>
 
 

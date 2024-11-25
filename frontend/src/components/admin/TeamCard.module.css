@@ -1,0 +1,10 @@
+.TeamContainer {
+    height: 100%; /* Stays within its parent's height */
+    max-height: 100%; /* Prevents exceeding the parent's height */
+    width: 100%;
+    overflow-y: auto; /* Enables scrolling */
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
