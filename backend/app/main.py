@@ -113,6 +113,7 @@ async def get_projects(
 
             # Append project details in the format required by ProjectResponse
             project_list.append(ProjectResponse(
+                project_id=project.project_id,
                 project_name=project.name,
                 description=project.description,
                 start_date=project.start_date,
@@ -138,6 +139,7 @@ async def get_projects(
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
+
 # Create a new project with assigned managers and employees (ADMIN)
 @app.post("/projects/", response_model=ProjectResponse)
 async def create_project(
@@ -145,18 +147,20 @@ async def create_project(
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
-    
+    # Ensure the user is an admin
     if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+       raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
 
     try:
-        # Step 1: Create the project
+        # Step 1: Create the project with default status and project owner from the logged-in user
         db_project = DBProject(
             name=project.project_name,
             description=project.description,
             start_date=project.start_date,
             end_date=project.end_date,
-            project_owner_id=project.project_owner_id,
+            project_owner_id=user.employee_id,  # Extract owner from logged-in user
+            project_status="In Progress"  # Default project status
         )
         db.add(db_project)
         db.commit()
@@ -180,16 +184,24 @@ async def create_project(
 
         db.commit()
 
-        # Step 4: Return a minimal response (or success message)
-        return {
-            "project_id": db_project.project_id,
-            "message": "Project created successfully"
-        }
+        # Step 4: Return the project details
+        return ProjectResponse(
+            project_name=db_project.name,
+            description=db_project.description,
+            start_date=db_project.start_date,
+            end_date=db_project.end_date,
+            project_status=db_project.project_status,
+            project_owner_id=db_project.project_owner_id,
+            project_owner=user.name,  # Owner name from logged-in user
+            manager_ids=project.managers,
+            employee_ids=project.employees
+        )
 
     except HTTPException as e:
         raise e  
     except Exception as e:
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
     
 # Update Project by ID(ADMIN)
 @app.put("/projects/{project_id}", response_model=ProjectResponse)
@@ -293,8 +305,12 @@ async def delete_project(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all managers (ADMIN)
+# Get all managers (ADMIN)
 @app.get("/managers/", response_model=ManagerListResponse)
-async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
+async def get_all_managers(
+        db: Session = Depends(get_db), 
+        user: DBEmployee = Depends(verify_jwt)
+    ):
     # Only admins can view all managers
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
@@ -302,43 +318,60 @@ async def get_all_managers(db: Session = Depends(get_db), user: DBEmployee = Dep
     try:
         # Fetch all managers from the database
         managers = db.query(DBEmployee).filter(DBEmployee.role == "manager").all()
-        
 
-        # If no managers are found
+        # If no managers are found, return an empty ManagerListResponse
         if not managers:
-            raise HTTPException(status_code=404, detail="No managers found")
-        
-        managers.append({"managers.append":len(managers)})
+            return ManagerListResponse(managers=[], manager_count=0)
 
-        return managers
+        # Convert SQLAlchemy objects to Pydantic models
+        manager_list = [ManagerResponse.model_validate(manager) for manager in managers]
+
+        # Return the ManagerListResponse
+        return ManagerListResponse(
+            managers=manager_list,
+            manager_count=len(manager_list)
+        )
 
     except HTTPException as e:
-        raise e  # Explicitly raised HTTPExceptions are returned as-is
+        # Explicitly raised HTTPExceptions are returned as-is
+        raise e
     except Exception as e:
+        # Catch other unexpected errors
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all employees (ADMIN)
 @app.get("/employees/", response_model=EmployeeListResponse)
-async def get_all_employees(db: Session = Depends(get_db), user: DBEmployee = Depends(verify_jwt)):
+async def get_all_employees(
+        db: Session = Depends(get_db), 
+        #user: DBEmployee = Depends(verify_jwt)
+    ):
     # Only admins can view all employees
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    #if user.role != "admin":
+     #  raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
         # Fetch all employees from the database
         employees = db.query(DBEmployee).all()
 
-        # If no employees are found
+        # If no employees are found, return an empty EmployeeListResponse
         if not employees:
-            raise HTTPException(status_code=404, detail="No employees found")
-        
-        employees.append({"employee_length": len(employees)})
+            return EmployeeListResponse(employees=[], employee_count=0)
 
-        return employees
+        # Convert SQLAlchemy objects to Pydantic models
+        employee_list = [EmployeeResponse.model_validate(employee) for employee in employees]
+
+        # Return the EmployeeListResponse
+        return EmployeeListResponse(
+            employees=employee_list,
+            employee_count=len(employee_list)
+        )
 
     except HTTPException as e:
-        raise e  # Explicitly raised HTTPExceptions are returned as-is
+        # Explicitly raised HTTPExceptions are returned as-is
+        raise e
     except Exception as e:
+        # Catch other unexpected errors
+        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Change Roles (ADMIN)
