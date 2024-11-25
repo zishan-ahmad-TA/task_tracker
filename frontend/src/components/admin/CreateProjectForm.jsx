@@ -18,7 +18,7 @@ const CreateProjectForm = ({ members, managers }) => {
     return (
         <div className={styles.CreateForm}>
             <Input label="Project Name" id="project_name" />
-            <Input label="Project Description" id="project_description" />
+            <Input label="Project Desc" id="project_description" />
 
             <fieldset className={styles.Fieldset}>
                 <label className={styles.Label} htmlFor="start_date">
