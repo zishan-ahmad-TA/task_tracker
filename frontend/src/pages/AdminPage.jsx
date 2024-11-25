@@ -22,6 +22,9 @@ const AdminPage = () => {
     setIsProjectModalOpen(false);
   }
 
+  const onDeleteSuccess = () => {
+    fetchProjects();
+  }
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -36,19 +39,19 @@ const AdminPage = () => {
     fetchUserDetails();
   }, []);
 
+  const fetchProjects = async () => {
+    try {
+      const projectData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/projects`)
+      setProjects(projectData.projects);
+      setTotalProjects(projectData.project_count);
+
+    } catch (err) {
+      console.error("Error fetching projects", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const projectData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/projects`)
-        setProjects(projectData.projects);
-        setTotalProjects(projectData.project_count);
-
-      } catch (err) {
-        console.error("Error fetching projects", err);
-      }
-    };
-
-    fetchUserDetails();
+    fetchProjects();
   }, []);
 
 
@@ -67,6 +70,7 @@ const AdminPage = () => {
         buttonColor="#E59178">
         <Input label="Project Name" />
         <Input label="Project Description" />
+
       </DialogComponent>
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
@@ -97,7 +101,7 @@ const AdminPage = () => {
         </div>
 
         <div className={styles.ProjectColumn}>
-          <ProjectCard projects={projects} />
+          <ProjectCard projects={projects} onDeleteSuccess={onDeleteSuccess} />
         </div>
       </div>
     </>

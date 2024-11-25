@@ -9,7 +9,6 @@
 .Label {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
     margin-bottom: 8px;
     display: block;
 }
@@ -26,7 +25,7 @@
 }
 
 .Input:focus {
-    border-color: #4CAF50;
+    border-color: var(--secondary-background);
     box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
     outline: none;
 }

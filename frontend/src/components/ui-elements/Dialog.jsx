@@ -9,7 +9,7 @@ const DialogComponent = ({
     description,
     buttonText,
     buttonColor,
-    onSave,
+    onSubmit,
     children
 }) => (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -29,7 +29,7 @@ const DialogComponent = ({
                             className={`${styles.Button}`}
                             style={{ background: buttonColor }}
                             onClick={() => {
-                                onSave();
+                                onSubmit();
                                 onOpenChange(false);
                             }}
                         >
