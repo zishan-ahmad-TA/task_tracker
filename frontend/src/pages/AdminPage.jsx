@@ -8,7 +8,7 @@ import ProjectCard from "../components/admin/ProjectCard";
 import TeamCard from "../components/admin/TeamCard";
 import DialogComponent from "../components/ui-elements/Dialog";
 import apiRequest from "../utils/apiRequest";
-import Input from "../components/ui-elements/Input";
+import CreateProjectForm from "../components/admin/CreateProjectForm";
 
 const AdminPage = () => {
   const [userDetails, setUserDetails] = useState(null);
@@ -62,15 +62,12 @@ const AdminPage = () => {
 
   return (
     <>
-      <DialogComponent open={isAddProjectModalOpen}
-        onOpenChange={closeAddProject}
-        title="Add new Project"
-        description=""
-        buttonText="Add Project"
-        buttonColor="#E59178">
-        <Input label="Project Name" />
-        <Input label="Project Description" />
+      <DialogComponent open={isAddProjectModalOpen} onOpenChange={closeAddProject}
+        title="Add new Project" description=""
+        buttonText="Add Project" buttonColor="#E59178">
 
+
+        <CreateProjectForm />
       </DialogComponent>
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
