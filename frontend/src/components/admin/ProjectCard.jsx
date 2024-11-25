@@ -4,7 +4,7 @@ import DialogComponent from '../ui-elements/Dialog';
 import apiRequest from '../../utils/apiRequest';
 import { useState } from 'react';
 
-const ProjectCard = ({ projects, onDeleteSuccess = () => { } }) => {
+const ProjectCard = ({ projects, setProjects }) => {
 
     const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
     const [projectIdToDelete, setProjectIdToDelete] = useState(null);
@@ -17,8 +17,8 @@ const ProjectCard = ({ projects, onDeleteSuccess = () => { } }) => {
         try {
             const url = `${import.meta.env.VITE_BACKEND_URL}/projects/${projectId}`;
             await apiRequest(url, 'DELETE');
+            setProjects((prevProjects) => prevProjects.filter((item) => item.project_id !== projectId))
             setProjectIdToDelete(null);
-            onDeleteSuccess();
         }
 
         catch (error) {

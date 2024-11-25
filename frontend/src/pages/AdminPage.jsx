@@ -25,10 +25,6 @@ const AdminPage = () => {
     setIsProjectModalOpen(false);
   }
 
-  const onDeleteSuccess = () => {
-    fetchProjects();
-  }
-
   const fetchUserDetails = async () => {
     try {
       const userData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/get-userdetails`)
@@ -60,7 +56,6 @@ const AdminPage = () => {
       setEmployees(employeeData.employees);
       setMembers(members);
       setManagers(managers);
-      console.log(managers);
       setTotalEmployee(employeeData.employee_count);
 
     } catch (err) {
@@ -93,7 +88,7 @@ const AdminPage = () => {
       <DialogComponent open={isAddProjectModalOpen} onOpenChange={closeAddProject}
         title="Add new Project" description=""
         buttonText="Add Project" buttonColor="#E59178">
-        <CreateProjectForm members={members} managers={managers}/>
+        <CreateProjectForm members={members} managers={managers} />
       </DialogComponent>
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
@@ -124,7 +119,7 @@ const AdminPage = () => {
         </div>
 
         <div className={styles.ProjectColumn}>
-          <ProjectCard projects={projects} onDeleteSuccess={onDeleteSuccess} members={members} managers={managers} />
+          <ProjectCard projects={projects} setProjects={setProjects} />
         </div>
       </div>
     </>
