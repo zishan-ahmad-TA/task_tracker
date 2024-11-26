@@ -18,8 +18,8 @@ const AdminPage = () => {
   const [employee, setEmployees] = useState([]);
   const [managers, setManagers] = useState([]);
   const [members, setMembers] = useState([]);
-  const [totalProjects, setTotalProjects] = useState(0);
-  const [totalEmployee, setTotalEmployee] = useState([]);
+  const [totalProjects, setTotalProjects] = useState('NA');
+  const [totalEmployee, setTotalEmployee] = useState('NA');
 
   const closeAddProject = () => {
     setIsProjectModalOpen(false);
@@ -56,7 +56,7 @@ const AdminPage = () => {
       setEmployees(employeeData.employees);
       setMembers(members);
       setManagers(managers);
-      setTotalEmployee(employeeData.employee_count);
+      setTotalEmployee(employeeData?.employee_count || 0);
 
     } catch (err) {
       console.error("Error fetching projects", err);

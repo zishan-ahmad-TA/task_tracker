@@ -42,10 +42,9 @@ class ProjectListResponse(BaseModel):
 
 # Pydantic model for Task
 class TaskBase(BaseModel):
+    name: str
     description: str
     due_date: datetime
-    task_owner: str
-    status: str
     employee_ids: List[int]
 
 class TaskCreate(TaskBase):
@@ -54,9 +53,40 @@ class TaskCreate(TaskBase):
 class Task(TaskBase):
     task_id: int
     project_id: int
+    task_status: str
+    task_owner_id: int
+    task_owner_name: str
 
     class Config:
         orm_mode = True
+
+# Task response model for individual tasks
+class TaskResponse(BaseModel):
+    task_id: int
+    name: str
+    description: str
+    due_date: datetime
+    status: str
+    task_owner_id: int
+    task_owner_name: str
+    employee_names: List[str]  # Names of employees assigned to the task
+
+    class Config:
+        orm_mode = True
+
+# Response model for the list of tasks
+class TaskListResponse(BaseModel):
+    tasks: List[TaskResponse]
+    task_count: int
+
+# Model for updating a task
+class TaskUpdate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    due_date: datetime
+    task_status: str
+    employee_ids: List[int]
+
 
 
 # Pydantic model for Employee
@@ -87,6 +117,20 @@ class ManagerListResponse(BaseModel):
     managers: List[ManagerResponse]
     manager_count: int
 
+
+class MemberResponse(BaseModel):
+    employee_id: int
+    name: str
+    email_id: str
+    role: str
+
+    class Config:
+        from_attributes = True
+
+class MemberListResponse(BaseModel):
+    members: List[MemberResponse]
+    member_count: int
+
 class EmployeeResponse(BaseModel):
     employee_id: int
     name: str
@@ -98,9 +142,46 @@ class EmployeeResponse(BaseModel):
 class EmployeeListResponse(BaseModel):
     employees: List[EmployeeResponse]
     employee_count: int
+ 
 
-class RoleUpdateRequest(BaseModel):
-    new_role: str  
+# Response model for a single project
+class EmployeeProjectResponse(BaseModel):
+    project_id: int
+    project_name: str
+    description: str
+    start_date: datetime
+    end_date: datetime
+    project_status: str
+    project_owner_id: int
+    project_owner_name: str
+
+    class Config:
+        orm_mode = True
+
+# Response model for list of projects assigned to an employee
+class EmployeeProjectsListResponse(BaseModel):
+    projects: List[EmployeeProjectResponse]
+    project_count: int
+
+    # Response model for a single task
+class EmployeeTaskResponse(BaseModel):
+    task_id: int
+    task_name: str
+    description: str
+    due_date: datetime
+    task_status: str
+    project_id: int
+    project_name: str
+    task_owner_id: int
+    task_owner_name: str
+
+    class Config:
+        orm_mode = True
+
+# Response model for list of tasks assigned to an employee
+class EmployeeTasksListResponse(BaseModel):
+    tasks: List[EmployeeTaskResponse]
+    task_count: int
 
 
 
