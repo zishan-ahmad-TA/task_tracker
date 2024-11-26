@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ToastComponent from "../components/ui-elements/Toast";
 import styles from './AdminPage.module.css';
 import Navbar from '../components/shared/Navbar';
 import KpiCard from "../components/shared/KpiCard";
@@ -20,6 +21,9 @@ const AdminPage = () => {
   const [members, setMembers] = useState([]);
   const [totalProjects, setTotalProjects] = useState('NA');
   const [totalEmployee, setTotalEmployee] = useState('NA');
+  const [toastMessage, setToastMessage] = useState('');
+  const [isToastOpen, setIsToastOpen] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const [formData, setFormData] = useState({
     project_name: '',
@@ -30,14 +34,14 @@ const AdminPage = () => {
     employee_ids: [],
   });
 
-  const handleInputChange = (key, value) => {
+  const handleProjectInput = (key, value) => {
     setFormData(prevState => ({
       ...prevState,
       [key]: value,
     }));
   };
 
-  const handleFormSubmit = async () => {
+  const handleCreateProject = async () => {
     const payload = {
       ...formData,
       start_date: formData.start_date ? formData.start_date.toISOString() : null,
@@ -48,13 +52,19 @@ const AdminPage = () => {
 
     try {
       await apiRequest('/projects', 'POST', payload);
-      await fetchProjects();
       closeAddProject();
+      setIsError(false);
+      setToastMessage("Success! Your new project has been created!");
+      setIsToastOpen(true);
+      await fetchProjects();
+
     } catch (error) {
-      console.error('Failed to create project:', error.message);
+      setIsError(true);
+      setToastMessage("Failed to create project");
+      setIsToastOpen(true);
+      console.error(error.message);
     }
   };
-
 
   const closeAddProject = () => {
     setIsProjectModalOpen(false);
@@ -85,7 +95,6 @@ const AdminPage = () => {
     try {
       const employeeData = await apiRequest(`/employees`);
       const employees = employeeData.employees;
-      console.log(employees)
       const members = employees.filter(emp => emp.role === 'member');
       const managers = employees.filter(emp => emp.role === 'manager');
 
@@ -114,7 +123,6 @@ const AdminPage = () => {
   }, []);
 
 
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -128,15 +136,22 @@ const AdminPage = () => {
         description=""
         buttonText="Add Project"
         buttonColor="#E59178"
-        onSubmit={handleFormSubmit}
+        onSubmit={handleCreateProject}
       >
         <CreateProjectForm
           members={members}
           managers={managers}
           formData={formData}
-          onInputChange={handleInputChange}
+          onInputChange={handleProjectInput}
         />
       </DialogComponent>
+
+      <ToastComponent
+        open={isToastOpen}
+        setOpen={setIsToastOpen}
+        toastMessage={toastMessage}
+        toastTitle={isError ? "Error Occurred ❌" : "All Set! ✅"}
+      />
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
         navDesc="Ready to build the next big thing?"
@@ -166,7 +181,7 @@ const AdminPage = () => {
         </div>
 
         <div className={styles.ProjectColumn}>
-          <ProjectCard projects={projects} setProjects={setProjects} />
+          <ProjectCard projects={projects} fetchProjects={fetchProjects} />
         </div>
       </div>
     </>

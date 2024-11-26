@@ -2,12 +2,16 @@ import styles from '../admin/ProjectCard.module.css';
 import ListCard from '../shared/ListCard';
 import DialogComponent from '../ui-elements/Dialog';
 import apiRequest from '../../utils/apiRequest';
+import ToastComponent from '../ui-elements/Toast';
 import { useState } from 'react';
 
-const ProjectCard = ({ projects, setProjects }) => {
+const ProjectCard = ({ projects, fetchProjects }) => {
 
     const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
     const [projectIdToDelete, setProjectIdToDelete] = useState(null);
+    const [toastMessage, setToastMessage] = useState('');
+    const [isError, setIsError] = useState(false);
+    const [isToastOpen, setIsToastOpen] = useState(false);
     const closeDeleteProject = () => {
         setIsDeleteProjectModalOpen(false);
     }
@@ -15,13 +19,19 @@ const ProjectCard = ({ projects, setProjects }) => {
     const deleteProjects = async (projectId) => {
         if (!projectId) return;
         try {
-            const url = `${import.meta.env.VITE_BACKEND_URL}/projects/${projectId}`;
+            const url = `/projects/${projectId}`;
             await apiRequest(url, 'DELETE');
-            setProjects((prevProjects) => prevProjects.filter((item) => item.project_id !== projectId))
+            setIsError(false);
+            setToastMessage("The project was deleted successfully!");
+            setIsToastOpen(true);
+            await fetchProjects();
             setProjectIdToDelete(null);
         }
 
         catch (error) {
+            setToastMessage("Failed to delete project");
+            setIsError(true);
+            setIsToastOpen(true);
             console.error(error);
         }
 
@@ -37,7 +47,12 @@ const ProjectCard = ({ projects, setProjects }) => {
                 buttonColor="#ff4d3d"
                 onSubmit={() => deleteProjects(projectIdToDelete)} />
 
-
+            <ToastComponent
+                open={isToastOpen}
+                setOpen={setIsToastOpen}
+                toastMessage={toastMessage}
+                toastTitle={isError ? "Error Occurred ❌" : "All Set! ✅"}
+            />
             <div className={styles.ProjectContainer}>
                 {projects.map((project, index) => (
                     <ListCard
