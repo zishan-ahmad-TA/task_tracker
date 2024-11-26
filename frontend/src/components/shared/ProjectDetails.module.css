@@ -1,0 +1,38 @@
+.projectTitle {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .projectDescription {
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .detailsRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  
+  .detailItem {
+    color: #444;
+  }
+  
+  .detailsSection {
+    margin-top: 20px;
+  }
+  
+  .sectionTitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 1rem;
+    color: #555;
+  }
+  

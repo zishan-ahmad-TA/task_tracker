@@ -10,6 +10,7 @@ import TeamCard from "../components/admin/TeamCard";
 import DialogComponent from "../components/ui-elements/Dialog";
 import apiRequest from "../utils/apiRequest";
 import ProjectForm from "../components/admin/ProjectForm";
+import ProjectDetails from "../components/shared/ProjectDetails";
 
 const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +26,8 @@ const AdminPage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [isViewProjectModalOpen, setIsViewProjectModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const [projectCreateData, setProjectCreateData] = useState({
     project_name: '',
@@ -59,7 +62,7 @@ const AdminPage = () => {
     });
     setIsAddProjectModalOpen(false);
   };
-  
+
   const closeEditProject = () => {
     setProjectEditData({
       project_name: '',
@@ -71,7 +74,13 @@ const AdminPage = () => {
     });
     setIsEditProjectModalOpen(false);
   };
-  
+
+  const closeViewProject = () => {
+    setSelectedProject(null);
+    setIsViewProjectModalOpen(false);
+  };
+
+
 
   const handleProjectInput = (key, value) => {
     setProjectCreateData(prevState => ({
@@ -160,7 +169,7 @@ const AdminPage = () => {
           .filter(emp => emp)
           .map(emp => ({ value: emp.employee_id, label: emp.name })),
       });
-      
+
 
 
 
@@ -207,6 +216,19 @@ const AdminPage = () => {
 
     } catch (err) {
       console.error("Error fetching projects", err);
+    }
+  };
+
+  const handleViewProject = async (projectId) => {
+    try {
+      setIsViewProjectModalOpen(true);
+      const projectDetailData = await apiRequest(`/projects/${projectId}`);
+      setSelectedProject(projectDetailData);
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      setIsError(true);
+      setToastMessage("Failed to fetch project details");
+      setIsToastOpen(true);
     }
   };
 
@@ -267,6 +289,18 @@ const AdminPage = () => {
 
       </DialogComponent>
 
+
+      <DialogComponent
+        open={isViewProjectModalOpen}
+        onOpenChange={closeViewProject}
+        title="Project Details"
+        buttonText="Close"
+        buttonColor="#E59178"
+        onSubmit={closeViewProject}
+      >
+        <ProjectDetails project={selectedProject} />
+      </DialogComponent>
+
       <ToastComponent
         open={isToastOpen}
         setOpen={setIsToastOpen}
@@ -305,7 +339,8 @@ const AdminPage = () => {
           <ProjectCard projects={projects}
             fetchProjects={fetchProjects}
             isEditing={isEditProjectModalOpen}
-            onEditClick={openEditProject} />
+            onEditClick={openEditProject}
+            onViewClick={handleViewProject} />
         </div>
       </div>
     </>

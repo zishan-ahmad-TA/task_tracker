@@ -6,7 +6,6 @@ const DialogComponent = ({
     open,
     onOpenChange,
     title,
-    description,
     buttonText,
     buttonColor,
     onSubmit,
@@ -17,9 +16,6 @@ const DialogComponent = ({
             <Dialog.Overlay className={styles.Overlay} />
             <Dialog.Content className={styles.Content}>
                 <Dialog.Title className={styles.Title}>{title}</Dialog.Title>
-                <Dialog.Description className={styles.Description}>
-                    {description}
-                </Dialog.Description>
                 {children}
                 <div
                     style={{ display: "flex", marginTop: 25, justifyContent: "flex-end" }}

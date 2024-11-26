@@ -6,18 +6,25 @@ import { MdOutlinePublishedWithChanges } from "react-icons/md";
 import TooltipComponent from '../ui-elements/Tooltip';
 
 const ListCard = ({
-    label = "", value = "To Track tasks",
+    label = "", value = "",
     status = "",
     showStatusIcon = true, isWorkItems = true,
+    listClickable = false,
     onDeleteIconClick = () => { },
-    onEditIconClick = () => { }
+    onEditIconClick = () => { },
+    onLabelClick = () => { }
 }) => {
     const statusColor = status === "Closed" ? "#E59178" : "#82C468";
 
     return (
         <div className={styles.ListCardContainer}>
             <div className={styles.CardText}>
-                <div className={styles.CardTitle}>
+                <div
+                    className={styles.CardTitle}
+                    style={{ cursor: listClickable ? 'pointer' : 'default' }}
+                    onClick={onLabelClick}
+                >
+
                     {label}
                 </div>
 
