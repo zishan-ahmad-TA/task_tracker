@@ -1,6 +1,3 @@
-@import "@radix-ui/colors/black-alpha.css";
-
-
 .Overlay {
 	background-color: var(--black-a9);
 	position: fixed;
