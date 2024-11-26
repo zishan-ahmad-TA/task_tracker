@@ -7,12 +7,12 @@ from database import Base
 class Project(Base):
     __tablename__ = "projects"
     
-    project_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), index=True)  # Added length to String
-    description = Column(String(255))  # Added length to String
+    project_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255), index=True)  
+    description = Column(String(255))  
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    project_owner_id = Column(Integer)  # Added length to String
+    project_owner_id = Column(Integer) 
     project_status = Column(String(255))
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete")
@@ -23,12 +23,13 @@ class Project(Base):
 class Task(Base):
     __tablename__ = "tasks"
     
-    task_id = Column(Integer, primary_key=True, index=True)
-    description = Column(String(255))  # Added length to String
+    task_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255))
+    description = Column(String(255))  
     due_date = Column(DateTime)
-    status = Column(String(255))  # Added length to String
+    status = Column(String(255))  #
     project_id = Column(Integer, ForeignKey("projects.project_id"))
-    task_owner_id = Column(Integer)  # Added length to String
+    task_owner_id = Column(Integer) 
     
     project = relationship("Project", back_populates="tasks")
     employees = relationship("EmployeeTask", back_populates="task", cascade="all, delete") 
@@ -38,10 +39,10 @@ class Task(Base):
 class Employee(Base):
     __tablename__ = "employee"
     
-    employee_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))  # Added length to String
+    employee_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255)) 
     email_id = Column(String(255))
-    role = Column(String(255))  # Added length to String
+    role = Column(String(255))  
     profile_image_url = Column(String(255), nullable=True)
 
     tasks = relationship("EmployeeTask", back_populates="employee", cascade="all, delete")

@@ -137,6 +137,61 @@ async def get_projects(
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
+# Get project by id (ADMIN only)
+@app.get("/projects/{project_id}", response_model=ProjectResponse)
+async def get_project_by_id(
+    project_id: int, 
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)  # If you want to validate user role or permissions
+):
+
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch the project from the database
+        project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
+
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Fetch the project owner
+        project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
+        if not project_owner:
+            raise HTTPException(status_code=404, detail="Project owner not found")
+
+        # Fetch managers assigned to the project
+        managers = db.query(DBEmployee).join(EmployeeProject).filter(
+            EmployeeProject.project_id == project.project_id, DBEmployee.role == "manager"
+        ).all()
+
+        # Fetch employees assigned to the project
+        employees = db.query(DBEmployee).join(EmployeeProject).filter(
+            EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
+        ).all()
+
+        # Return the project details
+        return ProjectResponse(
+            project_id=project.project_id,
+            project_name=project.name,
+            description=project.description,
+            start_date=project.start_date,
+            end_date=project.end_date,
+            project_status=project.project_status,
+            project_owner_id=project.project_owner_id,
+            project_owner_name=project_owner.name,
+            manager_ids=[manager.employee_id for manager in managers],
+            employee_ids=[employee.employee_id for employee in employees]
+        )
+
+    except HTTPException as e:
+        raise e  # Explicitly raised HTTPExceptions are returned as-is
+    except Exception as e:
+        # Catch other unexpected errors
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+
 
 # Create a new project with assigned managers and employees (ADMIN)
 @app.post("/projects/", response_model=ProjectResponse)
@@ -161,6 +216,9 @@ async def create_project(
             project_status="In Progress"  # Default project status
         )
 
+        db.add(db_project)
+        db.commit()
+
         # Step 2: Assign managers to the project
         for manager_id in project.manager_ids:
             manager = db.query(DBEmployee).filter(DBEmployee.employee_id == manager_id, DBEmployee.role == "manager").first()
@@ -177,7 +235,7 @@ async def create_project(
             db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=employee_id)
             db.add(db_employee_project)
 
-        db.add(db_project)
+        
         db.commit()
         db.refresh(db_project)
 
@@ -339,31 +397,31 @@ async def get_all_managers(
         # Catch other unexpected errors
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-# Get all employees (ADMIN)
-@app.get("/employees/", response_model=EmployeeListResponse)
-async def get_all_employees(
+# Get all members (ADMIN)
+@app.get("/members/", response_model=MemberListResponse)
+async def get_all_members(
         db: Session = Depends(get_db), 
         user: DBEmployee = Depends(verify_jwt)
     ):
-    # Only admins can view all employees
+    # Only admins can view all managers
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
-        # Fetch all employees from the database
-        employees = db.query(DBEmployee).all()
+        # Fetch all managers from the database
+        members = db.query(DBEmployee).filter(DBEmployee.role == "member").all()
 
-        # If no employees are found, return an empty EmployeeListResponse
-        if not employees:
-            return EmployeeListResponse(employees=[], employee_count=0)
+        # If no managers are found, return an empty ManagerListResponse
+        if not members:
+            return MemberListResponse(members=[], member_count=0)
 
         # Convert SQLAlchemy objects to Pydantic models
-        employee_list = [EmployeeResponse.model_validate(employee) for employee in employees]
+        member_list = [MemberResponse.model_validate(member) for member in members]
 
-        # Return the EmployeeListResponse
-        return EmployeeListResponse(
-            employees=employee_list,
-            employee_count=len(employee_list)
+        # Return the ManagerListResponse
+        return MemberListResponse(
+            members=member_list,
+            member_count=len(member_list)
         )
 
     except HTTPException as e:
@@ -371,7 +429,6 @@ async def get_all_employees(
         raise e
     except Exception as e:
         # Catch other unexpected errors
-        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Change Roles (ADMIN)
@@ -394,7 +451,7 @@ async def update_employee_role(
 
         # Determine the current and new role
         current_role = employee.role
-        if current_role == "employee":
+        if current_role == "manager":
             new_role = "member"
         elif current_role == "member":
             new_role = "employee"
@@ -444,172 +501,394 @@ async def logout(response: RedirectResponse):
 
     return RedirectResponse(url="http://localhost:5173/login")
 
+# Create a new task and assign employees (ADMIN, MANAGER)
+@app.post("/tasks/{project_id}",response_model=Task)
+async def create_task(
+    task: TaskCreate,
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Ensure the user is an admin or manager
+    if user.role != "admin" and user.role != "manager":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Step 1: Validate that the project exists
+        db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
+        if not db_project:
+            raise HTTPException(status_code=404, detail=f"Project with ID {project_id} not found")
+
+        # Step 2: Create the task
+        db_task = DBTask(
+            name=task.name,
+            description=task.description,
+            due_date=task.due_date,
+            project_id=project_id,
+            status="Not Started",  # Default task status
+            task_owner_id=user.employee_id  # Logged-in user is the task owner
+        )
+
+        
+
+        db.add(db_task)
+        db.commit()
+        db.refresh(db_task)
+
+        # Step 3: Assign employees to the task
+        for employee_id in task.employee_ids:
+            employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
+            if not employee:
+                raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
+            db_employee_task = EmployeeTask(task_id=db_task.task_id, employee_id=employee_id)
+            db.add(db_employee_task)
+
+        db.commit()
+
+        # Step 4: Return the task details
+        return Task(
+            task_id=db_task.task_id,
+            name=db_task.name,
+            description=db_task.description,
+            due_date=db_task.due_date,
+            project_id=db_task.project_id,
+            task_status=db_task.status,
+            task_owner_id=db_task.task_owner_id,
+            task_owner_name=user.name,  # Owner name from logged-in user
+            employee_ids=task.employee_ids
+        )
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
+# Get all tasks for a specific project (ADMIN, MANAGER)
+@app.get("/projects/tasks/{project_id}", response_model=TaskListResponse)
+async def get_tasks_for_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Step 1: Role-based access control
+    if user.role not in {"admin", "manager"}:
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins and Managers only")
+
+    try:
+        # Step 2: Validate that the project exists
+        db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
+        if not db_project:
+            raise HTTPException(status_code=404, detail=f"Project with ID {project_id} not found")
+
+        # Step 3: Fetch all tasks for the project
+        db_tasks = db.query(DBTask).filter(DBTask.project_id == project_id).all()
+
+        # Step 4: Prepare the task response list
+        task_list = []
+        for task in db_tasks:
+            # Fetch the task owner
+            task_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == task.task_owner_id).first()
+            if not task_owner:
+                raise HTTPException(status_code=404, detail=f"Task owner with ID {task.task_owner_id} not found")
+
+            # Fetch the employees assigned to the task
+            employees = db.query(DBEmployee).join(EmployeeTask).filter(EmployeeTask.task_id == task.task_id).all()
+
+            # Append task details to the response list
+            task_list.append(TaskResponse(
+                task_id=task.task_id,
+                name=task.name,
+                description=task.description,
+                due_date=task.due_date,
+                task_status=task.status,
+                task_owner_id=task.task_owner_id,
+                task_owner_name=task_owner.name,
+                employee_names=[employee.name for employee in employees]
+            ))
+
+        # Step 5: Return the response in the required format
+        return TaskListResponse(
+            tasks=task_list,
+            task_count=len(task_list)
+        )
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Unexpected error while fetching tasks: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Update a task (ADMIN, MANAGER)
+@app.put("/tasks/{task_id}", response_model=Task)
+async def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Step 1: Role-based access control
+    if user.role not in {"admin", "manager"}:
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins and Managers only")
+
+    try:
+        # Step 2: Fetch the task
+        db_task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
+        if not db_task:
+            raise HTTPException(status_code=404, detail=f"Task with ID {task_id} not found")
+
+        # Step 3: Update task details if provided
+        if task_update.name:
+            db_task.name = task_update.name
+        if task_update.description:
+            db_task.description = task_update.description
+        if task_update.due_date:
+            db_task.due_date = task_update.due_date
+        if task_update.task_status:
+            db_task.status = task_update.task_status
+
+        # Step 4: Update assigned employees if provided
+        if task_update.employee_ids is not None:
+            # Clear current employee assignments
+            db.query(EmployeeTask).filter(EmployeeTask.task_id == task_id).delete()
+            db.commit()
+
+            # Re-assign employees
+            for employee_id in task_update.employee_ids:
+                employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
+                if not employee:
+                    raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
+                db_employee_task = EmployeeTask(task_id=task_id, employee_id=employee_id)
+                db.add(db_employee_task)
+
+        # Save changes
+        db.commit()
+        db.refresh(db_task)
+
+        # Step 5: Return the updated task details
+        employees = db.query(DBEmployee).join(EmployeeTask).filter(EmployeeTask.task_id == task_id).all()
+        return Task(
+            task_id=db_task.task_id,
+            name=db_task.name,
+            description=db_task.description,
+            due_date=db_task.due_date,
+            project_id=db_task.project_id,
+            task_status=db_task.status,
+            task_owner_id=db_task.task_owner_id,
+            task_owner_name=user.name,  # Owner name from logged-in user
+            employee_ids=[employee.employee_id for employee in employees]
+        )
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Unexpected error while updating task: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+# Delete a task (ADMIN, MANAGER)
+@app.delete("/tasks/{task_id}", response_model=dict)
+async def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Step 1: Role-based access control
+    if user.role not in {"admin", "manager"}:
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins and Managers only")
+
+    try:
+        # Step 2: Fetch the task
+        db_task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
+        if not db_task:
+            raise HTTPException(status_code=404, detail=f"Task with ID {task_id} not found")
+
+        # Step 3: Delete associated employee assignments
+        db.query(EmployeeTask).filter(EmployeeTask.task_id == task_id).delete()
+
+        # Step 4: Delete the task
+        db.delete(db_task)
+        db.commit()
+
+        # Step 5: Return confirmation
+        return {"message": f"Task with ID {task_id} successfully deleted"}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Unexpected error while deleting task: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
+# Get all projects for a specific employee
+@app.get("/employees/{employee_id}/projects", response_model=EmployeeProjectsListResponse)
+async def get_projects_for_employee(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Allow only admins, managers, or the employee themself to access the data
+    if user.role != "admin" and user.role != "manager" and user.employee_id != employee_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
 
-
-
-
-
-
-# Create a new task for a list of employees
-@app.post("/tasks/", response_model=Task)
-async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
-    # Step 1: Create the task
-    db_task = DBTask(
-        description=task.description,
-        due_date=task.due_date,
-        status="new",  # Automatically set the status to "new"
-        task_owner=task.task_owner,  # The task creator
-        project_id=task.project_id
-    )
-    db.add(db_task)
-    db.commit()
-    db.refresh(db_task)
-
-    # Step 2: Assign employees to the task
-    for employee_id in task.employee_ids:
-        # Check if the employee exists
+    try:
+        # Step 1: Validate that the employee exists
         db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
         if not db_employee:
             raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
 
-        # Create the association in EmployeeTask table
-        db_employee_task = EmployeeTask(employee_id=employee_id, task_id=db_task.task_id)
-        db.add(db_employee_task)
+        # Step 2: Fetch all projects assigned to the employee
+        assigned_projects = db.query(DBProject).join(EmployeeProject).filter(
+            EmployeeProject.employee_id == employee_id
+        ).all()
 
-    db.commit()
+        # Step 3: Prepare the response
+        project_list = []
+        for project in assigned_projects:
+            # Fetch the project owner
+            project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
+            if not project_owner:
+                raise HTTPException(status_code=404, detail=f"Owner for project {project.project_id} not found")
 
-    # Return the created task with its details
-    return db_task
+            # Add project details to the response list
+            project_list.append(EmployeeProjectResponse(
+                project_id=project.project_id,
+                project_name=project.name,
+                description=project.description,
+                start_date=project.start_date,
+                end_date=project.end_date,
+                project_status=project.project_status,
+                project_owner_id=project.project_owner_id,
+                project_owner_name=project_owner.name
+            ))
 
+        # Return the list of projects
+        return EmployeeProjectsListResponse(
+            projects=project_list,
+            project_count=len(project_list)
+        )
 
-# Get all tasks
-@app.get("/tasks/", response_model=List[Task])
-async def get_tasks(request: Request, db: Session = Depends(get_db)):
-    print(request.cookies)
-    tasks = db.query(DBTask).all()
-    return tasks
-
-
-# Get all tasks for a specific project
-@app.get("/tasks/{project_id}", response_model=List[Task])
-async def get_tasks_by_project(project_id: int, db: Session = Depends(get_db)):
-    tasks = db.query(DBTask).filter(DBTask.project_id == project_id).all()
-    return tasks
-
-# Get all tasks for a specific project and employee
-@app.get("/tasks/{project_id}/employee/{employee_id}", response_model=List[Task])
-async def get_tasks_by_project_and_employee(project_id: int, employee_id: int, db: Session = Depends(get_db)):
-    # Query tasks that match the project_id and employee_id
-    tasks = db.query(DBTask).join(EmployeeTask).filter(DBTask.project_id == project_id, EmployeeTask.employee_id == employee_id).all()
-
-    if not tasks:
-        raise HTTPException(status_code=404, detail="No tasks found for this project and employee")
-
-    return tasks
-
-#Get all tasks for a specific project and task owner
-@app.get("/tasks/{project_id}/owner/{task_owner}", response_model=List[Task])
-async def get_tasks_by_project_and_owner(project_id: int, task_owner: str, db: Session = Depends(get_db)):
-    # Query tasks for a specific project and owner
-    tasks = db.query(DBTask).filter(DBTask.project_id == project_id, DBTask.owner == task_owner).all()
-
-    if not tasks:
-        raise HTTPException(status_code=404, detail="No tasks found for the given project and owner")
-
-    return tasks
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Unexpected error while fetching projects for employee {employee_id}: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
-# Update a task by ID
-@app.put("/tasks/{task_id}", response_model=Task)
-async def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
-    db_task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
+# Get all tasks for a specific employee
+@app.get("/employees/{employee_id}/tasks", response_model=EmployeeTasksListResponse)
+async def get_tasks_for_employee(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    # Allow only admins, managers, or the employee themselves to access the data
+    if user.role != "admin" and user.role != "manager" and user.employee_id != employee_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
 
-    if db_task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+    try:
+        # Step 1: Validate that the employee exists
+        db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
+        if not db_employee:
+            raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
 
-    # Update the fields of the task
-    db_task.description = task.description
-    db_task.due_date = task.due_date
-    db_task.status = task.status
-    db_task.task_owner = task.task_owner
-    db_task.project_id = task.project_id
+        # Step 2: Fetch all tasks assigned to the employee
+        assigned_tasks = db.query(DBTask).join(EmployeeTask).filter(
+            EmployeeTask.employee_id == employee_id
+        ).all()
 
-    db.commit()
-    db.refresh(db_task)
+        # Step 3: Prepare the response
+        task_list = []
+        for task in assigned_tasks:
+            # Fetch the project associated with the task
+            project = db.query(DBProject).filter(DBProject.project_id == task.project_id).first()
+            if not project:
+                raise HTTPException(status_code=404, detail=f"Project for task {task.task_id} not found")
 
-    return db_task
+            # Fetch the task owner
+            task_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == task.task_owner_id).first()
+            if not task_owner:
+                raise HTTPException(status_code=404, detail=f"Owner for task {task.task_id} not found")
 
+            # Add task details to the response list
+            task_list.append(EmployeeTaskResponse(
+                task_id=task.task_id,
+                task_name=task.name,
+                description=task.description,
+                due_date=task.due_date,
+                task_status=task.status,
+                project_id=task.project_id,
+                project_name=project.name,
+                task_owner_id=task.task_owner_id,
+                task_owner_name=task_owner.name
+            ))
 
-# Delete a task by ID
-@app.delete("/tasks/{task_id}", response_model=Task)
-async def delete_task(task_id: int, db: Session = Depends(get_db)):
-    db_task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
+        # Return the list of tasks
+        return EmployeeTasksListResponse(
+            tasks=task_list,
+            task_count=len(task_list)
+        )
 
-    if db_task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    db.delete(db_task)
-    db.commit()
-
-    return db_task
-
-
-# Create an Employee
-@app.post("/employees/", response_model=Employee)
-async def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
-    db_employee = DBEmployee(
-        name=employee.name, 
-        email_id=employee.email_id, 
-        role=employee.role
-    )
-    db.add(db_employee)
-    db.commit()
-    db.refresh(db_employee)
-    return db_employee
-
-# Get All Employees
-# @app.get("/employees/", response_model=List[Employee])
-# async def get_all_employees(db: Session = Depends(get_db)):
-#     employees = db.query(DBEmployee).all()
-#     return employees
-
-# Get an Employee by ID
-@app.get("/employees/{employee_id}", response_model=Employee)
-async def get_employee(employee_id: int, db: Session = Depends(get_db)):
-    db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
-    if not db_employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    return db_employee
-
-# Update an Employee
-@app.put("/employees/{employee_id}", response_model=Employee)
-async def update_employee(employee_id: int, employee: EmployeeCreate, db: Session = Depends(get_db)):
-    db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
-    if not db_employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Unexpected error while fetching tasks for employee {employee_id}: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
     
-    # Update fields
-    db_employee.name = employee.name
-    db_employee.email_id = employee.email_id
-    db_employee.role = employee.role
+# Get a task from task_id
+@app.get("/tasks/{task_id}", response_model=TaskResponse)
+async def get_task_by_id(
+    task_id: int,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)  # Optional: If you want to validate user role or permissions
+):
 
-    db.commit()
-    db.refresh(db_employee)
-    return db_employee
+    try:
+        print("hello")
+        # Fetch the task from the database
+        task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
 
-# Delete an Employee
-@app.delete("/employees/{employee_id}")
-async def delete_employee(employee_id: int, db: Session = Depends(get_db)):
-    db_employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
-    if not db_employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    db.delete(db_employee)
-    db.commit()
-    return {"message": f"Employee with ID {employee_id} deleted successfully"}
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        # Fetch the associated project for the task
+        project = db.query(DBProject).filter(DBProject.project_id == task.project_id).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found for this task")
+
+        # Fetch the task owner (employee assigned to the task)
+        task_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == task.task_owner_id).first()
+        if not task_owner:
+            raise HTTPException(status_code=404, detail="Task owner not found")
+
+        # Fetch employees assigned to the task (if any)
+        employees = db.query(DBEmployee).join(EmployeeTask).filter(EmployeeTask.task_id == task.task_id).all()
+
+        # Return the task details along with related information
+        return TaskResponse(
+            task_id=task.task_id,
+            name = task.name,
+            description=task.description,
+            due_date=task.due_date,
+            status=task.status,
+            task_owner_id=task.task_owner_id,
+            task_owner_name=task_owner.name,
+            project_id=task.project_id,
+            project_name=project.name,
+            employee_names=[employee.name for employee in employees]
+        )
+
+    except HTTPException as e:
+        raise e  # Return explicitly raised HTTPExceptions as-is
+    except Exception as e:
+        # Catch any unexpected errors
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+
+
+
+
+
 
 
