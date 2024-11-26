@@ -9,8 +9,7 @@ import ProjectCard from "../components/admin/ProjectCard";
 import TeamCard from "../components/admin/TeamCard";
 import DialogComponent from "../components/ui-elements/Dialog";
 import apiRequest from "../utils/apiRequest";
-import CreateProjectForm from "../components/admin/CreateProjectForm";
-import EditProjectForm from "../components/admin/EditProjectForm";
+import ProjectForm from "../components/admin/ProjectForm";
 
 const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -27,17 +26,62 @@ const AdminPage = () => {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [projectCreateData, setProjectCreateData] = useState({
     project_name: '',
     description: '',
     start_date: null,
     end_date: null,
-    manager_ids: [],
-    employee_ids: [],
+    managers: [],
+    employees: [],
   });
 
+  console.log(managers)
+
+
+  const [projectEditData, setProjectEditData] = useState({
+    project_name: '',
+    description: '',
+    start_date: null,
+    end_date: null,
+    managers: [],
+    employees: [],
+  });
+
+
+  const closeAddProject = () => {
+    setProjectCreateData({
+      project_name: '',
+      description: '',
+      start_date: null,
+      end_date: null,
+      managers: [],
+      employees: [],
+    });
+    setIsAddProjectModalOpen(false);
+  };
+  
+  const closeEditProject = () => {
+    setProjectEditData({
+      project_name: '',
+      description: '',
+      start_date: null,
+      end_date: null,
+      managers: [],
+      employees: [],
+    });
+    setIsEditProjectModalOpen(false);
+  };
+  
+
   const handleProjectInput = (key, value) => {
-    setFormData(prevState => ({
+    setProjectCreateData(prevState => ({
+      ...prevState,
+      [key]: value,
+    }));
+  };
+
+  const handleEditInput = (key, value) => {
+    setProjectEditData(prevState => ({
       ...prevState,
       [key]: value,
     }));
@@ -45,11 +89,12 @@ const AdminPage = () => {
 
   const handleCreateProject = async () => {
     const payload = {
-      ...formData,
-      start_date: formData.start_date ? formData.start_date.toISOString() : null,
-      end_date: formData.end_date ? formData.end_date.toISOString() : null,
-      manager_ids: formData.manager_ids.map(manager => manager.value),
-      employee_ids: formData.employee_ids.map(employee => employee.value),
+      project_name: projectCreateData.project_name,
+      description: projectCreateData.description,
+      start_date: projectCreateData.start_date ? projectCreateData.start_date.toISOString() : null,
+      end_date: projectCreateData.end_date ? projectCreateData.end_date.toISOString() : null,
+      manager_ids: projectCreateData.managers.map(manager => manager.value),
+      employee_ids: projectCreateData.employees.map(employee => employee.value),
     };
 
     try {
@@ -68,17 +113,64 @@ const AdminPage = () => {
     }
   };
 
-  const closeAddProject = () => {
-    setIsAddProjectModalOpen(false);
-  }
 
-  const openEditProject = (projectId) => {
-    setIsEditProjectModalOpen(true);
-  }
+  const handleEditProject = async () => {
+    const payload = {
+      project_name: projectCreateData.project_name,
+      description: projectCreateData.description,
+      start_date: projectCreateData.start_date ? projectCreateData.start_date.toISOString() : null,
+      end_date: projectCreateData.end_date ? projectCreateData.end_date.toISOString() : null,
+      manager_ids: projectCreateData.managers.map(manager => manager.value),
+      employee_ids: projectCreateData.employees.map(employee => employee.value),
+    };
 
-  const closeEditProject = () => {
-    setIsEditProjectModalOpen(false);
-  }
+    try {
+      await apiRequest('/projects', 'PUT', payload);
+      closeAddProject();
+      setIsError(false);
+      setToastMessage("Success! Your new project has been edited!");
+      setIsToastOpen(true);
+      await fetchProjects();
+
+    } catch (error) {
+      setIsError(true);
+      setToastMessage("Failed to edit project");
+      setIsToastOpen(true);
+      console.error(error.message);
+    }
+  };
+
+
+  const openEditProject = async (projectId) => {
+    try {
+      setIsEditProjectModalOpen(true);
+      const projectDetailData = await apiRequest(`/projects/${projectId}`);
+
+      setProjectEditData({
+        project_name: projectDetailData.project_name,
+        description: projectDetailData.description,
+        start_date: new Date(projectDetailData.start_date),
+        end_date: new Date(projectDetailData.end_date),
+        managers: projectDetailData.manager_ids
+          .map(id => managers.find(manager => manager.employee_id === id))
+          .filter(manager => manager)
+          .map(manager => ({ value: manager.employee_id, label: manager.name })),
+        employees: projectDetailData.employee_ids
+          .map(id => employee.find(emp => emp.employee_id === id))
+          .filter(emp => emp)
+          .map(emp => ({ value: emp.employee_id, label: emp.name })),
+      });
+      
+
+
+
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      setIsError(true);
+      setToastMessage("Failed to fetch project details");
+      setIsToastOpen(true);
+    }
+  };
 
   const fetchUserDetails = async () => {
     try {
@@ -148,10 +240,10 @@ const AdminPage = () => {
         buttonColor="#E59178"
         onSubmit={handleCreateProject}
       >
-        <CreateProjectForm
+        <ProjectForm
           members={members}
           managers={managers}
-          formData={formData}
+          formData={projectCreateData}
           onInputChange={handleProjectInput}
         />
       </DialogComponent>
@@ -164,14 +256,15 @@ const AdminPage = () => {
         description=""
         buttonText="Save Changes"
         buttonColor="#E59178"
-      // onSubmit={handleEditProject}
+        onSubmit={handleEditProject}
       >
-        <EditProjectForm
+        <ProjectForm
           members={members}
           managers={managers}
-          formData={formData}
-        // onInputChange={handleEditInput}
+          formData={projectEditData}
+          onInputChange={handleEditInput}
         />
+
       </DialogComponent>
 
       <ToastComponent

@@ -2,9 +2,9 @@ import Input from "../ui-elements/Input";
 import { DatePicker } from 'rsuite';
 import 'rsuite/dist/rsuite.min.css';
 import MultiSelect from "../ui-elements/MultiSelect";
-import styles from './CreateProjectForm.module.css';
+import styles from './ProjectForm.module.css';
 
-const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
+const ProjectForm = ({ members, managers, formData, onInputChange }) => {
 
     const selectableMembers = members.map(member => ({
         value: member.employee_id,
@@ -22,13 +22,13 @@ const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
             <Input
                 label="Project Name"
                 id="project_name"
-                value={formData.projectName}
+                value={formData.project_name}
                 onChange={e => onInputChange('project_name', e.target.value)}
             />
             <Input
                 label="Project Desc"
                 id="project_description"
-                value={formData.projectDescription}
+                value={formData.description}
                 onChange={e => onInputChange('description', e.target.value)}
             />
 
@@ -41,7 +41,7 @@ const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
                     placeholder="Select Date"
                     style={{ width: '70%' }}
                     className={styles.DatePicker}
-                    value={formData.startDate}
+                    value={formData.start_date}
                     onChange={value => onInputChange('start_date', value)}
                 />
             </fieldset>
@@ -55,7 +55,7 @@ const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
                     placeholder="Select Date"
                     style={{ width: '70%' }}
                     className={styles.DatePicker}
-                    value={formData.endDate}
+                    value={formData.end_date}
                     onChange={value => onInputChange('end_date', value)}
                 />
             </fieldset>
@@ -67,8 +67,8 @@ const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
                 <MultiSelect
                     options={selectableManagers}
                     id="managers"
-                    value={formData.selectedManagers}
-                    onChange={value => onInputChange('manager_ids', value)}
+                    value={formData.managers}
+                    onChange={value => onInputChange('managers', value)}
                 />
             </fieldset>
             <fieldset className={styles.Fieldset}>
@@ -78,12 +78,12 @@ const CreateProjectForm = ({ members, managers, formData, onInputChange }) => {
                 <MultiSelect
                     id="employees"
                     options={selectableMembers}
-                    value={formData.selectedEmployees}
-                    onChange={value => onInputChange('employee_ids', value)}
+                    value={formData.employees}
+                    onChange={value => onInputChange('employees', value)}
                 />
             </fieldset>
         </div>
     );
 };
 
-export default CreateProjectForm;
+export default ProjectForm;
