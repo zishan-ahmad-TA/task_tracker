@@ -467,9 +467,10 @@ async def get_all_employees(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Change Roles (ADMIN)
-@app.put("/employees/{employee_id}/role", response_model=EmployeeResponse)
+@app.put("/change-role/{employee_id}/", response_model=EmployeeResponse)
 async def update_employee_role(
     employee_id: int,
+    request: UpdateRoleRequest,
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
@@ -484,25 +485,23 @@ async def update_employee_role(
         if not employee:
             raise HTTPException(status_code=404, detail="Employee not found")
 
-        # Determine the current and new role
-        current_role = employee.role
-        if current_role == "manager":
-            new_role = "member"
-        elif current_role == "member":
-            new_role = "employee"
-        else:
-            raise HTTPException(status_code=400, detail="Role switching not supported for this role.")
+        # Validate the new role
+        valid_roles = {"member", "manager", "admin"}
+        if request.new_role not in valid_roles:
+            raise HTTPException(status_code=400, detail=f"Invalid role: {request.new_role}. Allowed roles are {valid_roles}.")
 
-        # Update the employee's role
-        employee.role = new_role
+        # Prevent self-demotion
+        if employee.employee_id == user.employee_id:
+            raise HTTPException(status_code=400, detail="You cannot change your own role.")
 
-        # Wipe corresponding table details
-        if new_role == "manager":
-            # Wipe EmployeeTask and EmployeeProject entries
-            db.query(EmployeeTask).filter(EmployeeTask.employee_id == employee_id).delete()
+        # Assign the new role
+        employee.role = request.new_role
+
+        # Wipe corresponding table details (if applicable)
+        if request.new_role == "member":
             db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
-        elif new_role == "member":
-            # Wipe EmployeeProject entries
+        elif request.new_role == "manager":
+            db.query(EmployeeTask).filter(EmployeeTask.employee_id == employee_id).delete()
             db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
 
         # Commit changes to the database
@@ -519,7 +518,9 @@ async def update_employee_role(
     except HTTPException as e:
         raise e  # Return explicitly raised HTTPExceptions as-is
     except Exception as e:
+        # Log the exception for debugging (not shown here)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
 
 
 # Logout

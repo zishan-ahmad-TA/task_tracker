@@ -14,6 +14,9 @@ class ProjectBase(BaseModel):
     employee_ids: Optional[List[int]] = []
 
 
+class UpdateRoleRequest(BaseModel):
+    new_role: str
+
 
 class ProjectUpdate(ProjectBase):
     project_status: str 
