@@ -431,6 +431,41 @@ async def get_all_members(
         # Catch other unexpected errors
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
+# Get all employees (ADMIN)
+@app.get("/employees/", response_model=EmployeeListResponse)
+async def get_all_employees(
+        db: Session = Depends(get_db), 
+        user: DBEmployee = Depends(verify_jwt)
+    ):
+    # Only admins can view all employees
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+    try:
+        # Fetch all employees from the database
+        employees = db.query(DBEmployee).all()
+
+        # If no employees are found, return an empty EmployeeListResponse
+        if not employees:
+            return EmployeeListResponse(employees=[], employee_count=0)
+
+        # Convert SQLAlchemy objects to Pydantic models
+        employee_list = [EmployeeResponse.model_validate(employee) for employee in employees]
+
+        # Return the EmployeeListResponse
+        return EmployeeListResponse(
+            employees=employee_list,
+            employee_count=len(employee_list)
+        )
+
+    except HTTPException as e:
+        # Explicitly raised HTTPExceptions are returned as-is
+        raise e
+    except Exception as e:
+        # Catch other unexpected errors
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
 # Change Roles (ADMIN)
 @app.put("/employees/{employee_id}/role", response_model=EmployeeResponse)
 async def update_employee_role(
