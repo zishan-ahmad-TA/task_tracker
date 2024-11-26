@@ -3,11 +3,13 @@ import styles from './MultiSelect.module.css';
 
 const MultiSelect = ({
     options,
-    defaultValue,
+    value,
+    onChange,
+    defaultValue = [],
     name,
     outlineColor = "#82C468",
     className = "basic-multi-select",
-    classNamePrefix = "select"
+    classNamePrefix = "select",
 }) => {
     const customStyles = {
         control: (provided, state) => ({
@@ -20,14 +22,15 @@ const MultiSelect = ({
         }),
     };
 
-
     return (
         <div className={styles.MultiSelectContainer}>
             <Select
                 defaultValue={defaultValue}
+                value={value}
                 isMulti
                 name={name}
                 options={options}
+                onChange={onChange}
                 className={className}
                 classNamePrefix={classNamePrefix}
                 styles={customStyles}

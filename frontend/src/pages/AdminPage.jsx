@@ -21,13 +21,48 @@ const AdminPage = () => {
   const [totalProjects, setTotalProjects] = useState('NA');
   const [totalEmployee, setTotalEmployee] = useState('NA');
 
+  const [formData, setFormData] = useState({
+    project_name: '',
+    description: '',
+    start_date: null,
+    end_date: null,
+    manager_ids: [],
+    employee_ids: [],
+  });
+
+  const handleInputChange = (key, value) => {
+    setFormData(prevState => ({
+      ...prevState,
+      [key]: value,
+    }));
+  };
+
+  const handleFormSubmit = async () => {
+    const payload = {
+      ...formData,
+      start_date: formData.start_date ? formData.start_date.toISOString() : null,
+      end_date: formData.end_date ? formData.end_date.toISOString() : null,
+      manager_ids: formData.manager_ids.map(manager => manager.value),
+      employee_ids: formData.employee_ids.map(employee => employee.value),
+    };
+
+    try {
+      await apiRequest('/projects', 'POST', payload);
+      await fetchProjects();
+      closeAddProject();
+    } catch (error) {
+      console.error('Failed to create project:', error.message);
+    }
+  };
+
+
   const closeAddProject = () => {
     setIsProjectModalOpen(false);
   }
 
   const fetchUserDetails = async () => {
     try {
-      const userData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/get-userdetails`)
+      const userData = await apiRequest(`/get-userdetails`)
       setUserDetails(userData);
     } catch (err) {
       console.error("Error fetching user details:", err);
@@ -36,7 +71,7 @@ const AdminPage = () => {
 
   const fetchProjects = async () => {
     try {
-      const projectData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/projects`)
+      const projectData = await apiRequest(`/projects`)
       setProjects(projectData.projects);
       setTotalProjects(projectData.project_count);
 
@@ -48,8 +83,9 @@ const AdminPage = () => {
 
   const fetchEmployees = async () => {
     try {
-      const employeeData = await apiRequest(`${import.meta.env.VITE_BACKEND_URL}/employees`);
+      const employeeData = await apiRequest(`/employees`);
       const employees = employeeData.employees;
+      console.log(employees)
       const members = employees.filter(emp => emp.role === 'member');
       const managers = employees.filter(emp => emp.role === 'manager');
 
@@ -85,10 +121,21 @@ const AdminPage = () => {
 
   return (
     <>
-      <DialogComponent open={isAddProjectModalOpen} onOpenChange={closeAddProject}
-        title="Add new Project" description=""
-        buttonText="Add Project" buttonColor="#E59178">
-        <CreateProjectForm members={members} managers={managers} />
+      <DialogComponent
+        open={isAddProjectModalOpen}
+        onOpenChange={closeAddProject}
+        title="Add new Project"
+        description=""
+        buttonText="Add Project"
+        buttonColor="#E59178"
+        onSubmit={handleFormSubmit}
+      >
+        <CreateProjectForm
+          members={members}
+          managers={managers}
+          formData={formData}
+          onInputChange={handleInputChange}
+        />
       </DialogComponent>
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
