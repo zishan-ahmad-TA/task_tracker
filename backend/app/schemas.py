@@ -10,32 +10,27 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     start_date: datetime
     end_date: datetime
+    manager_ids: Optional[List[int]] = []
+    employee_ids: Optional[List[int]] = []
 
 
 
-class ProjectCreate(ProjectBase):
-    managers: List[int]  
-    employees: List[int]  
+class ProjectUpdate(ProjectBase):
+    project_status: str 
+    project_owner_id: int
 
-class Project(ProjectBase):
-    project_id: int
-
-    class Config:
-        orm_mode = True  
 
 class ProjectResponse(ProjectBase):
     project_id: int
+    project_owner_id: int
     project_owner_name: str
-    manager_ids: Optional[List[int]] = []
-    employee_ids: Optional[List[int]] = []
+    project_status: str
 
     class Config:
         orm_mode = True
 
-class ProjectResponse2(ProjectBase):
+class ProjectUpdateResponse(ProjectBase):
     project_owner_name: str
-    manager_ids: Optional[List[int]] = []
-    employee_ids: Optional[List[int]] = []
 
     class Config:
         orm_mode = True

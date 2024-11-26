@@ -121,8 +121,8 @@ async def get_projects(
                 project_status=project.project_status,
                 project_owner_id=project.project_owner_id,
                 project_owner_name=project_owner.name,
-                manager_names=[manager.name for manager in managers],  # Use manager names
-                employee_names=[employee.name for employee in employees]  # Use employee names
+                manager_names=[manager.name for manager in managers], 
+                employee_names=[employee.name for employee in employees] 
             ))
 
         # Return the response in the format required by ProjectListResponse
@@ -132,18 +132,16 @@ async def get_projects(
         )
 
     except HTTPException as e:
-        # Explicitly raised HTTPExceptions are returned as-is
         raise e
     except Exception as e:
-        # Catch other unexpected errors
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
 # Create a new project with assigned managers and employees (ADMIN)
-@app.post("/projects/", response_model=ProjectResponse2)
+@app.post("/projects/", response_model=ProjectResponse)
 async def create_project(
-    project: ProjectCreate,
+    project: ProjectBase,
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
@@ -164,7 +162,7 @@ async def create_project(
         )
 
         # Step 2: Assign managers to the project
-        for manager_id in project.managers:
+        for manager_id in project.manager_ids:
             manager = db.query(DBEmployee).filter(DBEmployee.employee_id == manager_id, DBEmployee.role == "manager").first()
             if not manager:
                 raise HTTPException(status_code=404, detail=f"Manager with ID {manager_id} not found")
@@ -172,7 +170,7 @@ async def create_project(
             db.add(db_employee_project)
 
         # Step 3: Assign employees to the project
-        for employee_id in project.employees:
+        for employee_id in project.employee_ids:
             employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
             if not employee:
                 raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
@@ -184,7 +182,8 @@ async def create_project(
         db.refresh(db_project)
 
         # Step 4: Return the project details
-        return ProjectResponse2(
+        return ProjectResponse(
+            project_id=db_project.project_id,
             project_name=db_project.name,
             description=db_project.description,
             start_date=db_project.start_date,
@@ -192,8 +191,8 @@ async def create_project(
             project_status=db_project.project_status,
             project_owner_id=db_project.project_owner_id,
             project_owner_name=user.name,  # Owner name from logged-in user
-            manager_ids=project.managers,
-            employee_ids=project.employees
+            manager_ids=project.manager_ids,
+            employee_ids=project.employee_ids
         )
 
     except HTTPException as e:
@@ -204,10 +203,10 @@ async def create_project(
 
     
 # Update Project by ID(ADMIN)
-@app.put("/projects/{project_id}", response_model=ProjectResponse)
+@app.put("/projects/{project_id}", response_model=ProjectUpdateResponse)
 async def update_project(
     project_id: int,
-    project: ProjectCreate,  # Pydantic model for project creation
+    project: ProjectUpdate,  # Pydantic model for project creation
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
@@ -230,22 +229,19 @@ async def update_project(
         db_project.description = project.description
         db_project.start_date = project.start_date
         db_project.end_date = project.end_date
-        db_project.project_owner_id = project.project_owner_id  # Ensure the owner is valid
-
-        # Commit the changes to the database
-        db.commit()
-        db.refresh(db_project)
+        db_project.project_status= project.project_status
+        db_project.project_owner_id = project_owner.employee_id  # Ensure the owner is valid
 
         db.query(EmployeeProject).filter(EmployeeProject.project_id == project_id).delete()
 
-        for manager_id in project.managers:
+        for manager_id in project.manager_ids:
             manager = db.query(DBEmployee).filter(DBEmployee.employee_id == manager_id, DBEmployee.role == "manager").first()
             if not manager:
                 raise HTTPException(status_code=404, detail=f"Manager with ID {manager_id} not found")
             db_employee_project = EmployeeProject(project_id=db_project.project_id, employee_id=manager_id)
             db.add(db_employee_project)
 
-        for employee_id in project.employees:
+        for employee_id in project.employee_ids:
             employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id, DBEmployee.role == "member").first()
             if not employee:
                 raise HTTPException(status_code=404, detail=f"Employee with ID {employee_id} not found")
@@ -261,11 +257,14 @@ async def update_project(
             "description": db_project.description,
             "start_date": db_project.start_date,
             "end_date": db_project.end_date,
+
             #Require addition of project status (in the table as well)
+            "project_status": db_project.project_status,
+
             "project_owner_id": db_project.project_owner_id,
             "project_owner_name": project_owner.name,
-            "managers": [manager_id for manager_id in project.managers],
-            "employees": [employee_id for employee_id in project.employees],
+            "managers": [manager_id for manager_id in project.manager_ids],
+            "employees": [employee_id for employee_id in project.employee_ids],
         }
 
     except HTTPException as e:
@@ -379,7 +378,6 @@ async def get_all_employees(
 @app.put("/employees/{employee_id}/role", response_model=EmployeeResponse)
 async def update_employee_role(
     employee_id: int,
-    role_update: RoleUpdateRequest,
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
@@ -394,14 +392,28 @@ async def update_employee_role(
         if not employee:
             raise HTTPException(status_code=404, detail="Employee not found")
 
-        # Validate the new role
-        if role_update.new_role not in ["manager", "employee"]:
-            raise HTTPException(status_code=400, detail="Invalid role. Must be 'manager' or 'employee'.")
+        # Determine the current and new role
+        current_role = employee.role
+        if current_role == "employee":
+            new_role = "member"
+        elif current_role == "member":
+            new_role = "employee"
+        else:
+            raise HTTPException(status_code=400, detail="Role switching not supported for this role.")
 
         # Update the employee's role
-        employee.role = role_update.new_role
+        employee.role = new_role
 
-        # Commit the change to the database
+        # Wipe corresponding table details
+        if new_role == "manager":
+            # Wipe EmployeeTask and EmployeeProject entries
+            db.query(EmployeeTask).filter(EmployeeTask.employee_id == employee_id).delete()
+            db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
+        elif new_role == "member":
+            # Wipe EmployeeProject entries
+            db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
+
+        # Commit changes to the database
         db.commit()
         db.refresh(employee)
 
@@ -416,6 +428,7 @@ async def update_employee_role(
         raise e  # Return explicitly raised HTTPExceptions as-is
     except Exception as e:
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
 
 # Logout
 @app.post("/logout", response_model=dict)
@@ -559,10 +572,10 @@ async def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db
     return db_employee
 
 # Get All Employees
-@app.get("/employees/", response_model=List[Employee])
-async def get_all_employees(db: Session = Depends(get_db)):
-    employees = db.query(DBEmployee).all()
-    return employees
+# @app.get("/employees/", response_model=List[Employee])
+# async def get_all_employees(db: Session = Depends(get_db)):
+#     employees = db.query(DBEmployee).all()
+#     return employees
 
 # Get an Employee by ID
 @app.get("/employees/{employee_id}", response_model=Employee)
