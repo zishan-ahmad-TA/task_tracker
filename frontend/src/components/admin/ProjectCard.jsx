@@ -5,7 +5,7 @@ import apiRequest from '../../utils/apiRequest';
 import ToastComponent from '../ui-elements/Toast';
 import { useState } from 'react';
 
-const ProjectCard = ({ projects, fetchProjects }) => {
+const ProjectCard = ({ projects, fetchProjects, onEditClick }) => {
 
     const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
     const [projectIdToDelete, setProjectIdToDelete] = useState(null);
@@ -63,6 +63,10 @@ const ProjectCard = ({ projects, fetchProjects }) => {
                         onDeleteIconClick={() => {
                             setIsDeleteProjectModalOpen(true);
                             setProjectIdToDelete(project.project_id);
+                        }}
+
+                        onEditIconClick={() => {
+                            onEditClick(project.project_id);
                         }}
                     />
                 ))}

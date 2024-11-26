@@ -10,12 +10,14 @@ import TeamCard from "../components/admin/TeamCard";
 import DialogComponent from "../components/ui-elements/Dialog";
 import apiRequest from "../utils/apiRequest";
 import CreateProjectForm from "../components/admin/CreateProjectForm";
+import EditProjectForm from "../components/admin/EditProjectForm";
 
 const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userDetails, setUserDetails] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [isAddProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   const [employee, setEmployees] = useState([]);
   const [managers, setManagers] = useState([]);
   const [members, setMembers] = useState([]);
@@ -67,7 +69,15 @@ const AdminPage = () => {
   };
 
   const closeAddProject = () => {
-    setIsProjectModalOpen(false);
+    setIsAddProjectModalOpen(false);
+  }
+
+  const openEditProject = (projectId) => {
+    setIsEditProjectModalOpen(true);
+  }
+
+  const closeEditProject = () => {
+    setIsEditProjectModalOpen(false);
   }
 
   const fetchUserDetails = async () => {
@@ -146,6 +156,24 @@ const AdminPage = () => {
         />
       </DialogComponent>
 
+
+      <DialogComponent
+        open={isEditProjectModalOpen}
+        onOpenChange={closeEditProject}
+        title="Edit project"
+        description=""
+        buttonText="Save Changes"
+        buttonColor="#E59178"
+      // onSubmit={handleEditProject}
+      >
+        <EditProjectForm
+          members={members}
+          managers={managers}
+          formData={formData}
+        // onInputChange={handleEditInput}
+        />
+      </DialogComponent>
+
       <ToastComponent
         open={isToastOpen}
         setOpen={setIsToastOpen}
@@ -167,7 +195,7 @@ const AdminPage = () => {
               color='#E59178'
               kpiValue={totalProjects}
               buttonTitle="Add new project"
-              onClick={() => setIsProjectModalOpen(true)} />
+              onClick={() => setIsAddProjectModalOpen(true)} />
 
             <KpiCard title="Team Size"
               Icon={FaUsers}
@@ -181,7 +209,10 @@ const AdminPage = () => {
         </div>
 
         <div className={styles.ProjectColumn}>
-          <ProjectCard projects={projects} fetchProjects={fetchProjects} />
+          <ProjectCard projects={projects}
+            fetchProjects={fetchProjects}
+            isEditing={isEditProjectModalOpen}
+            onEditClick={openEditProject} />
         </div>
       </div>
     </>

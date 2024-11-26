@@ -9,7 +9,8 @@ const ListCard = ({
     label = "", value = "To Track tasks",
     status = "",
     showStatusIcon = true, isWorkItems = true,
-    onDeleteIconClick = () => { }
+    onDeleteIconClick = () => { },
+    onEditIconClick = () => { }
 }) => {
     const statusColor = status === "Closed" ? "#E59178" : "#82C468";
 
@@ -33,21 +34,25 @@ const ListCard = ({
                     {isWorkItems ?
                         <>
                             <TooltipComponent tooltipText="Edit">
-                                <MdEdit size='20px' style={{ cursor: 'pointer' }} />
+                                <div onClick={onEditIconClick}>
+                                    <MdEdit size='20px' style={{ cursor: 'pointer' }} />
+                                </div>
                             </TooltipComponent>
 
                             <TooltipComponent tooltipText="Delete">
                                 <div onClick={onDeleteIconClick}>
-                                <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
-                            </div>
+                                    <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
+                                </div>
+                            </TooltipComponent>
+                        </> :
+                        <TooltipComponent tooltipText="Change Roles">
+
+                            < MdOutlinePublishedWithChanges style={{ cursor: 'pointer' }} />
+
                         </TooltipComponent>
-                </> :
-                <TooltipComponent tooltipText="Change Roles">
-                    < MdOutlinePublishedWithChanges style={{ cursor: 'pointer' }} />
-                </TooltipComponent>
                     }
+                </div>
             </div>
-        </div>
         </div >
     )
 }
