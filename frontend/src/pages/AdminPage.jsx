@@ -156,24 +156,16 @@ const AdminPage = ({ userDetails }) => {
     try {
       setIsEditProjectModalOpen(true);
       const projectDetailData = await apiRequest(`/projects/${projectId}`);
+      console.log(projectDetailData)
 
       setProjectEditData({
         project_name: projectDetailData.project_name,
         description: projectDetailData.description,
         start_date: new Date(projectDetailData.start_date),
         end_date: new Date(projectDetailData.end_date),
-        managers: projectDetailData.manager_ids
-          .map(id => managers.find(manager => manager.employee_id === id))
-          .filter(manager => manager)
-          .map(manager => ({ value: manager.employee_id, label: manager.name })),
-        employees: projectDetailData.employee_ids
-          .map(id => employee.find(emp => emp.employee_id === id))
-          .filter(emp => emp)
-          .map(emp => ({ value: emp.employee_id, label: emp.name })),
+        managers: projectDetailData.managers?.map(manager => ({ value: manager.employee_id, label: manager.name })) || [],
+        employees: projectDetailData.employees?.map(emp => ({ value: emp.employee_id, label: emp.name })) || [],
       });
-
-
-
 
     } catch (error) {
       console.error("Error fetching project details:", error);
@@ -285,6 +277,7 @@ const AdminPage = ({ userDetails }) => {
 
       <DialogComponent
         open={isViewProjectModalOpen}
+        loading={!selectedProject}
         onOpenChange={closeViewProject}
         title="Project Details"
         buttonText="Close"

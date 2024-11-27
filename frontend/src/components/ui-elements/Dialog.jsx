@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import styles from "./Dialog.module.css";
 import { RxCross1 } from "react-icons/rx";
+import Throbber from "./Throbber";
 
 const DialogComponent = ({
     open,
@@ -10,6 +11,7 @@ const DialogComponent = ({
     buttonText,
     buttonColor,
     onSubmit,
+    loading,
     children
 }) => (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -20,7 +22,7 @@ const DialogComponent = ({
                 {description && <Dialog.Description className={styles.Description}>
                     {description}
                 </Dialog.Description>}
-                {children}
+                {loading ? <Throbber/> : children}
                 <div
                     style={{ display: "flex", marginTop: 25, justifyContent: "flex-end" }}
                 >
