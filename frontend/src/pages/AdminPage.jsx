@@ -12,6 +12,7 @@ import useApiRequest from "../hooks/apiRequest";
 import ProjectForm from "../components/admin/ProjectForm";
 import ProjectDetails from "../components/shared/ProjectDetails";
 import Loader from "../components/ui-elements/Loader";
+import ChangeRoles from "../components/admin/ChangeRoles";
 
 const AdminPage = ({ userDetails }) => {
 
@@ -20,6 +21,8 @@ const AdminPage = ({ userDetails }) => {
   const [projects, setProjects] = useState([]);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+  const [isViewProjectModalOpen, setIsViewProjectModalOpen] = useState(false);
+  const [changeRoleModalOpen, setChangeRoleModalOpen] = useState(false);
   const [employee, setEmployees] = useState([]);
   const [managers, setManagers] = useState([]);
   const [members, setMembers] = useState([]);
@@ -28,7 +31,6 @@ const AdminPage = ({ userDetails }) => {
   const [toastMessage, setToastMessage] = useState('');
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [isViewProjectModalOpen, setIsViewProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedEditProject, setSelectedEditProject] = useState(null);
 
@@ -50,6 +52,10 @@ const AdminPage = ({ userDetails }) => {
     employees: [],
   });
 
+  const [changeRoleData, setChangeRoleData] = useState({
+    employee: null,
+    role: null,
+  });
 
   const closeAddProject = () => {
     setProjectCreateData({
@@ -61,6 +67,14 @@ const AdminPage = ({ userDetails }) => {
       employees: [],
     });
     setIsAddProjectModalOpen(false);
+  };
+
+  const closeChangeRole = () => {
+    setChangeRoleData({
+      employee: null,
+      role: null,
+    })
+    setChangeRoleModalOpen(false);
   };
 
   const closeEditProject = () => {
@@ -82,7 +96,6 @@ const AdminPage = ({ userDetails }) => {
   };
 
 
-
   const handleProjectInput = (key, value) => {
     setProjectCreateData(prevState => ({
       ...prevState,
@@ -94,6 +107,13 @@ const AdminPage = ({ userDetails }) => {
     setProjectEditData(prevState => ({
       ...prevState,
       [key]: value,
+    }));
+  };
+
+  const handleRoleInput = (key, value) => {
+    setChangeRoleData(prev => ({
+      ...prev,
+      [key]: value
     }));
   };
 
@@ -118,6 +138,29 @@ const AdminPage = ({ userDetails }) => {
     } catch (error) {
       setIsError(true);
       setToastMessage("Failed to create project");
+      setIsToastOpen(true);
+      console.error(error.message);
+    }
+  };
+
+
+  const handleChangeRole = async () => {
+    try {
+      const payload = { 
+        employee_id: changeRoleData.employee.value,
+        new_role: changeRoleData.role.value
+      };
+      
+      await apiRequest('/change-role', 'POST', payload);
+
+      setIsError(false);
+      setToastMessage("Success! Role has been changed!");
+      setIsToastOpen(true);
+      await fetchEmployees();
+
+    } catch (error) {
+      setIsError(true);
+      setToastMessage("Failed to change role");
       setIsToastOpen(true);
       console.error(error.message);
     }
@@ -287,6 +330,19 @@ const AdminPage = ({ userDetails }) => {
         <ProjectDetails project={selectedProject} />
       </DialogComponent>
 
+
+      <DialogComponent
+        open={changeRoleModalOpen}
+        onOpenChange={closeChangeRole}
+        title="Change Role"
+        buttonText="Update Role"
+        buttonColor="#E59178"
+        onSubmit={handleChangeRole}
+      >
+        <ChangeRoles employees={employee}
+          formData={changeRoleData} onInputChange={handleRoleInput} />
+      </DialogComponent>
+
       <ToastComponent
         open={isToastOpen}
         setOpen={setIsToastOpen}
@@ -314,7 +370,8 @@ const AdminPage = ({ userDetails }) => {
               Icon={FaUsers}
               color="#82C468"
               kpiValue={totalEmployee}
-              buttonTitle="Manage team" />
+              buttonTitle="Manage team"
+              onClick={() => { setChangeRoleModalOpen(true) }} />
           </div>
           <div className={styles.TeamRow}>
             <TeamCard employeeData={employee} />

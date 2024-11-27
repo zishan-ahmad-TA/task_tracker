@@ -1,0 +1,18 @@
+.ChangeRoles{
+    padding: 10px 0;
+}
+
+.Fieldset {
+    all: unset;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.Label {
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 8px;
+    display: block;
+}
