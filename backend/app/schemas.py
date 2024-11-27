@@ -21,6 +21,7 @@ class EmployeeBriefResponse(BaseModel):
 
 class UpdateRoleRequest(BaseModel):
     new_role: str
+    employee_id: int
 
 
 class ProjectUpdate(ProjectBase):

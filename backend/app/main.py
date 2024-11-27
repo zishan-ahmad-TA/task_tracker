@@ -470,9 +470,8 @@ async def get_all_employees(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Change Roles (ADMIN)
-@app.put("/change-role/{employee_id}/", response_model=EmployeeResponse)
+@app.put("/change-role/", response_model=EmployeeResponse)
 async def update_employee_role(
-    employee_id: int,
     request: UpdateRoleRequest,
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
@@ -483,7 +482,7 @@ async def update_employee_role(
 
     try:
         # Fetch the employee from the database
-        employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
+        employee = db.query(DBEmployee).filter(DBEmployee.employee_id == request.employee_id).first()
 
         if not employee:
             raise HTTPException(status_code=404, detail="Employee not found")
@@ -502,10 +501,10 @@ async def update_employee_role(
 
         # Wipe corresponding table details (if applicable)
         if request.new_role == "member":
-            db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
+            db.query(EmployeeProject).filter(EmployeeProject.employee_id == request.employee_id).delete()
         elif request.new_role == "manager":
-            db.query(EmployeeTask).filter(EmployeeTask.employee_id == employee_id).delete()
-            db.query(EmployeeProject).filter(EmployeeProject.employee_id == employee_id).delete()
+            db.query(EmployeeTask).filter(EmployeeTask.employee_id == request.employee_id).delete()
+            db.query(EmployeeProject).filter(EmployeeProject.employee_id == request.employee_id).delete()
 
         # Commit changes to the database
         db.commit()
