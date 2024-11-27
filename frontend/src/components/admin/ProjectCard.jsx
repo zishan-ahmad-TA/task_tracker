@@ -1,11 +1,13 @@
 import styles from '../admin/ProjectCard.module.css';
 import ListCard from '../shared/ListCard';
 import DialogComponent from '../ui-elements/Dialog';
-import apiRequest from '../../utils/apiRequest';
 import ToastComponent from '../ui-elements/Toast';
+import useApiRequest from '../../hooks/apiRequest';
 import { useState } from 'react';
 
 const ProjectCard = ({ projects, fetchProjects, onEditClick, onViewClick }) => {
+
+    const apiRequest = useApiRequest();
 
     const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
     const [projectIdToDelete, setProjectIdToDelete] = useState(null);

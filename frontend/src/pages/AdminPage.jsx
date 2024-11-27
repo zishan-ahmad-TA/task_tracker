@@ -8,11 +8,13 @@ import { VscFileSymlinkDirectory } from "react-icons/vsc";
 import ProjectCard from "../components/admin/ProjectCard";
 import TeamCard from "../components/admin/TeamCard";
 import DialogComponent from "../components/ui-elements/Dialog";
-import apiRequest from "../utils/apiRequest";
+import useApiRequest from "../hooks/apiRequest";
 import ProjectForm from "../components/admin/ProjectForm";
 import ProjectDetails from "../components/shared/ProjectDetails";
 
 const AdminPage = ({ userDetails }) => {
+
+  const apiRequest = useApiRequest();
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);

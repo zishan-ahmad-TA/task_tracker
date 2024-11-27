@@ -9,14 +9,14 @@ import Login from "./components/shared/Login";
 import AdminPage from "./pages/AdminPage";
 import MemberPage from "./pages/MemberPage";
 import ManagerPage from "./pages/ManagerPage";
-import apiRequest from "./utils/apiRequest";
+import useApiRequest from "./hooks/apiRequest";
 import { useEffect, useState } from "react";
 
 const App = () => {
   const [userDetails, setUserDetails] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const apiRequest = useApiRequest();
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -35,7 +35,7 @@ const App = () => {
     if (location.pathname !== "/login") {
       fetchUserDetails();
     }
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, apiRequest]);
 
   if (!userDetails && location.pathname !== "/login") {
     return <div>Loading...</div>;
