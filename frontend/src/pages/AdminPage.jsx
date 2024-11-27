@@ -151,7 +151,7 @@ const AdminPage = ({ userDetails }) => {
         new_role: changeRoleData.role.value
       };
       
-      await apiRequest('/change-role', 'POST', payload);
+      await apiRequest('/change-role', 'PUT', payload);
 
       setIsError(false);
       setToastMessage("Success! Role has been changed!");
