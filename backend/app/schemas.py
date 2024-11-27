@@ -16,7 +16,7 @@ class ProjectBase(BaseModel):
 
 class EmployeeBriefResponse(BaseModel):
     employee_id: int
-    employee_name: str
+    name: str
 
 
 class UpdateRoleRequest(BaseModel):
