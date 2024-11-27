@@ -31,8 +31,8 @@ const ProjectDetails = ({ project }) => {
             <div className={styles.detailsSection}>
                 <h3 className={styles.sectionTitle}>Managers</h3>
                 <p>
-                    {project.manager_ids?.length
-                        ? project.manager_ids.join(", ")
+                    {project.managers?.length
+                        ? project.managers.map(manager => manager.name).join(", ")
                         : "No managers assigned"}
                 </p>
             </div>
@@ -40,8 +40,8 @@ const ProjectDetails = ({ project }) => {
             <div className={styles.detailsSection}>
                 <h3 className={styles.sectionTitle}>Team Members</h3>
                 <p>
-                    {project.employee_ids?.length
-                        ? project.employee_ids.join(", ")
+                    {project.members?.length
+                        ? project.members.map(member => member.name).join(", ")
                         : "No team members assigned"}
                 </p>
             </div>
