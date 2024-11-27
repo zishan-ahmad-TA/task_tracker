@@ -156,7 +156,6 @@ const AdminPage = ({ userDetails }) => {
     try {
       setIsEditProjectModalOpen(true);
       const projectDetailData = await apiRequest(`/projects/${projectId}`);
-      console.log(projectDetailData)
 
       setProjectEditData({
         project_name: projectDetailData.project_name,

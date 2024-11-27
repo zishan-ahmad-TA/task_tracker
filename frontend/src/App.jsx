@@ -8,15 +8,12 @@ import AdminPage from "./pages/AdminPage";
 import MemberPage from "./pages/MemberPage";
 import ManagerPage from "./pages/ManagerPage";
 import useAuth from "./hooks/useAuth";
-import Loader from "./components/ui-elements/Loader";
 
 
 const App = () => {
   const { userDetails, loading } = useAuth();
 
-  if (loading) {
-    return <Loader />
-  }
+  if (loading) return;
 
   return (
     <Routes>
