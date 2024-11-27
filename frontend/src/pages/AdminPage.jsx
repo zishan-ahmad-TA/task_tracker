@@ -30,6 +30,7 @@ const AdminPage = ({ userDetails }) => {
   const [isError, setIsError] = useState(false);
   const [isViewProjectModalOpen, setIsViewProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedEditProject, setSelectedEditProject] = useState(null);
 
   const [projectCreateData, setProjectCreateData] = useState({
     project_name: '',
@@ -39,9 +40,6 @@ const AdminPage = ({ userDetails }) => {
     managers: [],
     employees: [],
   });
-
-  console.log(managers)
-
 
   const [projectEditData, setProjectEditData] = useState({
     project_name: '',
@@ -75,6 +73,7 @@ const AdminPage = ({ userDetails }) => {
       employees: [],
     });
     setIsEditProjectModalOpen(false);
+    setSelectedEditProject(null);
   };
 
   const closeViewProject = () => {
@@ -127,16 +126,16 @@ const AdminPage = ({ userDetails }) => {
 
   const handleEditProject = async () => {
     const payload = {
-      project_name: projectCreateData.project_name,
-      description: projectCreateData.description,
-      start_date: projectCreateData.start_date ? projectCreateData.start_date.toISOString() : null,
-      end_date: projectCreateData.end_date ? projectCreateData.end_date.toISOString() : null,
-      manager_ids: projectCreateData.managers.map(manager => manager.value),
-      employee_ids: projectCreateData.employees.map(employee => employee.value),
+      project_name: projectEditData.project_name,
+      description: projectEditData.description,
+      start_date: projectEditData.start_date ? projectEditData.start_date.toISOString() : null,
+      end_date: projectEditData.end_date ? projectEditData.end_date.toISOString() : null,
+      manager_ids: projectEditData.managers.map(manager => manager.value),
+      employee_ids: projectEditData.employees.map(employee => employee.value),
     };
 
     try {
-      await apiRequest('/projects', 'PUT', payload);
+      await apiRequest(`/projects/${selectedEditProject}`, 'PUT', payload);
       closeAddProject();
       setIsError(false);
       setToastMessage("Success! Your new project has been edited!");
@@ -156,7 +155,7 @@ const AdminPage = ({ userDetails }) => {
     try {
       setIsEditProjectModalOpen(true);
       const projectDetailData = await apiRequest(`/projects/${projectId}`);
-      console.log(projectDetailData)
+      setSelectedEditProject(projectDetailData.project_id)
 
       setProjectEditData({
         project_name: projectDetailData.project_name,
@@ -164,7 +163,7 @@ const AdminPage = ({ userDetails }) => {
         start_date: new Date(projectDetailData.start_date),
         end_date: new Date(projectDetailData.end_date),
         managers: projectDetailData.managers?.map(manager => ({ value: manager.employee_id, label: manager.name })) || [],
-        employees: projectDetailData.employees?.map(emp => ({ value: emp.employee_id, label: emp.name })) || [],
+        employees: projectDetailData.members?.map(emp => ({ value: emp.employee_id, label: emp.name })) || [],
       });
 
     } catch (error) {
@@ -259,6 +258,7 @@ const AdminPage = ({ userDetails }) => {
       <DialogComponent
         open={isEditProjectModalOpen}
         onOpenChange={closeEditProject}
+        loading={!selectedEditProject}
         title="Edit project"
         description=""
         buttonText="Save Changes"
