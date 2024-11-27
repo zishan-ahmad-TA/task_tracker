@@ -2,7 +2,6 @@ import styles from './ListCard.module.css';
 import { MdEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
 import { FaCircle } from "react-icons/fa";
-import { MdOutlinePublishedWithChanges } from "react-icons/md";
 import TooltipComponent from '../ui-elements/Tooltip';
 
 const ListCard = ({
@@ -38,7 +37,7 @@ const ListCard = ({
                     {status}
                 </div>
                 <div className={styles.CardIconContainer}>
-                    {isWorkItems ?
+                    {isWorkItems &&
                         <>
                             <TooltipComponent tooltipText="Edit">
                                 <div onClick={onEditIconClick}>
@@ -51,12 +50,7 @@ const ListCard = ({
                                     <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
                                 </div>
                             </TooltipComponent>
-                        </> :
-                        <TooltipComponent tooltipText="Change Roles">
-
-                            < MdOutlinePublishedWithChanges style={{ cursor: 'pointer' }} />
-
-                        </TooltipComponent>
+                        </>
                     }
                 </div>
             </div>
