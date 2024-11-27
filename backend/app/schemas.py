@@ -29,7 +29,11 @@ class ProjectUpdate(ProjectBase):
     #project_owner_id: int
 
 
-class ProjectResponse(ProjectBase):
+class ProjectResponse(BaseModel):
+    project_name: str
+    description: Optional[str] = None
+    start_date: datetime
+    end_date: datetime
     project_id: int
     project_owner_id: int
     project_owner_name: str
