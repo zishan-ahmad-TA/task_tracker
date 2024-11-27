@@ -121,10 +121,8 @@ async def get_projects(
                 project_status=project.project_status,
                 project_owner_id=project.project_owner_id,
                 project_owner_name=project_owner.name,
-                manager_ids=[manager.employee_id for manager in managers],
-                manager_names = [manager.name for manager in managers],
-                member_ids=[employee.employee_id for employee in members],
-                member_names = [employee.name for employee in members] 
+                managers=[{"employee_id" : manager.employee_id, "employee_name" :manager.name} for manager in managers],
+                members=[{"employee_id" : member.employee_id, "employee_name" : member.name} for member in members],
             ))
 
         # Return the response in the format required by ProjectListResponse
@@ -182,10 +180,8 @@ async def get_project_by_id(
             project_status=project.project_status,
             project_owner_id=project.project_owner_id,
             project_owner_name=project_owner.name,
-            manager_ids=[manager.employee_id for manager in managers],
-            manager_names = [manager.name for manager in managers],
-            member_ids=[member.employee_id for member in members],
-            member_names = [member.name for member in members]
+            managers=[{"employee_id" : manager.employee_id, "employee_name" :manager.name} for manager in managers],
+            members=[{"employee_id" : member.employee_id, "employee_name" : member.name} for member in members],
         )
 
     except HTTPException as e:

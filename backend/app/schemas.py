@@ -14,6 +14,10 @@ class ProjectBase(BaseModel):
     employee_ids: Optional[List[int]] = []
     member_ids: Optional[List[int]] = []
 
+class EmployeeBriefResponse(BaseModel):
+    employee_id: int
+    employee_name: str
+
 
 class UpdateRoleRequest(BaseModel):
     new_role: str
@@ -30,8 +34,8 @@ class ProjectResponse(ProjectBase):
     project_owner_id: int
     project_owner_name: str
     project_status: str
-    manager_names: Optional[List[str]] = []
-    member_names: Optional[List[str]] = []
+    managers: List[EmployeeBriefResponse]
+    members: List[EmployeeBriefResponse]
 
     class Config:
         orm_mode = True
