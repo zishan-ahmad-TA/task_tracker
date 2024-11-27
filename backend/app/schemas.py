@@ -12,6 +12,7 @@ class ProjectBase(BaseModel):
     end_date: datetime
     manager_ids: Optional[List[int]] = []
     employee_ids: Optional[List[int]] = []
+    member_ids: Optional[List[int]] = []
 
 
 class UpdateRoleRequest(BaseModel):
@@ -19,8 +20,9 @@ class UpdateRoleRequest(BaseModel):
 
 
 class ProjectUpdate(ProjectBase):
-    project_status: str 
-    project_owner_id: int
+    pass
+    #project_status: str 
+    #project_owner_id: int
 
 
 class ProjectResponse(ProjectBase):
@@ -28,6 +30,8 @@ class ProjectResponse(ProjectBase):
     project_owner_id: int
     project_owner_name: str
     project_status: str
+    manager_names: Optional[List[str]] = []
+    member_names: Optional[List[str]] = []
 
     class Config:
         orm_mode = True

@@ -69,11 +69,11 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         employee_id = payload.get("employee_id")
         if employee_id is None:
-            raise HTTPException(status_code=400, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid token")
         
         employee = db.query(DBEmployee).filter(DBEmployee.employee_id == employee_id).first()
         if not employee:
-            raise HTTPException(status_code=404, detail="Employee not found")
+            raise HTTPException(status_code=401, detail="Employee not found")
         
         return employee
     except JWTError:
@@ -107,7 +107,7 @@ async def get_projects(
             ).all()
 
             # Fetch employees
-            employees = db.query(DBEmployee).join(EmployeeProject).filter(
+            members = db.query(DBEmployee).join(EmployeeProject).filter(
                 EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
             ).all()
 
@@ -121,8 +121,10 @@ async def get_projects(
                 project_status=project.project_status,
                 project_owner_id=project.project_owner_id,
                 project_owner_name=project_owner.name,
-                manager_names=[manager.name for manager in managers], 
-                employee_names=[employee.name for employee in employees] 
+                manager_ids=[manager.employee_id for manager in managers],
+                manager_names = [manager.name for manager in managers],
+                member_ids=[employee.employee_id for employee in members],
+                member_names = [employee.name for employee in members] 
             ))
 
         # Return the response in the format required by ProjectListResponse
@@ -166,7 +168,7 @@ async def get_project_by_id(
         ).all()
 
         # Fetch employees assigned to the project
-        employees = db.query(DBEmployee).join(EmployeeProject).filter(
+        members = db.query(DBEmployee).join(EmployeeProject).filter(
             EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
         ).all()
 
@@ -181,7 +183,9 @@ async def get_project_by_id(
             project_owner_id=project.project_owner_id,
             project_owner_name=project_owner.name,
             manager_ids=[manager.employee_id for manager in managers],
-            employee_ids=[employee.employee_id for employee in employees]
+            manager_names = [manager.name for manager in managers],
+            member_ids=[member.employee_id for member in members],
+            member_names = [member.name for member in members]
         )
 
     except HTTPException as e:
@@ -273,22 +277,25 @@ async def update_project(
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
-
-        project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == project.project_owner_id).first()
-
+        
         # Fetch the existing project by project_id
         db_project = db.query(DBProject).filter(DBProject.project_id == project_id).first()
 
         if not db_project:
             raise HTTPException(status_code=404, detail="Project not found")
+        
+        project_owner = db.query(DBEmployee).filter(DBEmployee.employee_id == db_project.project_owner_id).first()
+
+        if not project_owner:
+            raise HTTPException(status_code=404, detail=f"Project owner with ID {db_project.project_owner_id} not found")
 
         # Update the project fields
         db_project.name = project.project_name
         db_project.description = project.description
         db_project.start_date = project.start_date
         db_project.end_date = project.end_date
-        db_project.project_status= project.project_status
-        db_project.project_owner_id = project_owner.employee_id  # Ensure the owner is valid
+        # db_project.project_status= project.project_status
+        # db_project.project_owner_id = project_owner.employee_id  # Ensure the owner is valid
 
         db.query(EmployeeProject).filter(EmployeeProject.project_id == project_id).delete()
 
@@ -322,7 +329,7 @@ async def update_project(
             "project_owner_id": db_project.project_owner_id,
             "project_owner_name": project_owner.name,
             "managers": [manager_id for manager_id in project.manager_ids],
-            "employees": [employee_id for employee_id in project.employee_ids],
+            "members": [employee_id for employee_id in project.employee_ids],
         }
 
     except HTTPException as e:
