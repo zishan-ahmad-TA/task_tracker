@@ -194,7 +194,7 @@ async def get_project_by_id(
 
 
 # Create a new project with assigned managers and employees (ADMIN)
-@app.post("/projects/", response_model=ProjectResponse)
+@app.post("/projects/", response_model=ProjectCreate)
 async def create_project(
     project: ProjectBase,
     db: Session = Depends(get_db),
@@ -240,7 +240,7 @@ async def create_project(
         db.refresh(db_project)
 
         # Step 4: Return the project details
-        return ProjectResponse(
+        return ProjectCreate(
             project_id=db_project.project_id,
             project_name=db_project.name,
             description=db_project.description,

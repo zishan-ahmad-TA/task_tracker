@@ -44,6 +44,19 @@ class ProjectResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class ProjectCreate(BaseModel):
+    project_name: str
+    description: Optional[str] = None
+    start_date: datetime
+    end_date: datetime
+    project_id: int
+    project_owner_id: int
+    project_owner_name: str
+    project_status: str
+
+    class Config:
+        orm_mode = True
+
 class ProjectUpdateResponse(ProjectBase):
     project_owner_name: str
 
