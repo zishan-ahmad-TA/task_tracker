@@ -11,6 +11,7 @@ import DialogComponent from "../components/ui-elements/Dialog";
 import useApiRequest from "../hooks/apiRequest";
 import ProjectForm from "../components/admin/ProjectForm";
 import ProjectDetails from "../components/shared/ProjectDetails";
+import Loader from "../components/ui-elements/Loader";
 
 const AdminPage = ({ userDetails }) => {
 
@@ -155,6 +156,7 @@ const AdminPage = ({ userDetails }) => {
     try {
       setIsEditProjectModalOpen(true);
       const projectDetailData = await apiRequest(`/projects/${projectId}`);
+      console.log(projectDetailData)
 
       setProjectEditData({
         project_name: projectDetailData.project_name,
@@ -240,7 +242,7 @@ const AdminPage = ({ userDetails }) => {
 
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Loader />
   }
 
   return (
