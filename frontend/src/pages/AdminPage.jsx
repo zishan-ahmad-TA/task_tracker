@@ -12,9 +12,8 @@ import apiRequest from "../utils/apiRequest";
 import ProjectForm from "../components/admin/ProjectForm";
 import ProjectDetails from "../components/shared/ProjectDetails";
 
-const AdminPage = () => {
+const AdminPage = ({ userDetails }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [userDetails, setUserDetails] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
@@ -181,15 +180,6 @@ const AdminPage = () => {
     }
   };
 
-  const fetchUserDetails = async () => {
-    try {
-      const userData = await apiRequest(`/get-userdetails`)
-      setUserDetails(userData);
-    } catch (err) {
-      console.error("Error fetching user details:", err);
-    }
-  };
-
   const fetchProjects = async () => {
     try {
       const projectData = await apiRequest(`/projects`)
@@ -235,7 +225,7 @@ const AdminPage = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        await Promise.all([fetchUserDetails(), fetchProjects(), fetchEmployees()]);
+        await Promise.all([fetchProjects(), fetchEmployees()]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
