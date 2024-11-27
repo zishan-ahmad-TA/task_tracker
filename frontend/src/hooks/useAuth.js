@@ -4,7 +4,7 @@ import useApiRequest from "./apiRequest";
 
 const useAuth = () => {
     const [userDetails, setUserDetails] = useState(null);
-    const [loading, setLoading] = useState(true); // Track loading
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
     const apiRequest = useApiRequest();
