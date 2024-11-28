@@ -25,9 +25,9 @@ const App = () => {
           userDetails?.role === "admin" ? (
             <AdminPage userDetails={userDetails} />
           ) : userDetails?.role === "member" ? (
-            <MemberPage />
+            <MemberPage userDetails={userDetails}/>
           ) : userDetails?.role === "manager" ? (
-            <ManagerPage />
+            <ManagerPage userDetails={userDetails}/>
           ) : (
             <Navigate to="/login" />
           )
