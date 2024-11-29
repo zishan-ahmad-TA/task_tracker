@@ -98,7 +98,8 @@ class TaskResponse(BaseModel):
     status: str
     task_owner_id: int
     task_owner_name: str
-    employee_names: List[str]  # Names of employees assigned to the task
+    #employee_names: List[str]  # Names of employees assigned to the task
+    members: List[EmployeeBriefResponse]
 
     class Config:
         orm_mode = True
@@ -113,7 +114,7 @@ class TaskUpdate(BaseModel):
     name: str
     description: Optional[str] = None
     due_date: datetime
-    task_status: str
+    #task_status: str
     employee_ids: List[int]
 
 

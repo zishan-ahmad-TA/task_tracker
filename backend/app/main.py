@@ -137,7 +137,7 @@ async def get_projects(
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-# Get project by id (ADMIN only)
+# Get project by id (ADMIN / MANAGER only)
 @app.get("/projects/{project_id}", response_model=ProjectResponse)
 async def get_project_by_id(
     project_id: int, 
@@ -145,8 +145,8 @@ async def get_project_by_id(
     user: DBEmployee = Depends(verify_jwt)  # If you want to validate user role or permissions
 ):
 
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    if user.role != "admin" and user.role != "manager":
+        raise HTTPException(status_code=403, detail="Access forbidden: Unauthorized User")
 
     try:
         # Fetch the project from the database
@@ -434,15 +434,15 @@ async def get_all_members(
         # Catch other unexpected errors
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-# Get all employees (ADMIN)
+# Get all employees (ADMIN, MANAGER)
 @app.get("/employees/", response_model=EmployeeListResponse)
 async def get_all_employees(
         db: Session = Depends(get_db), 
         user: DBEmployee = Depends(verify_jwt)
     ):
-    # Only admins can view all employees
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    
+    if user.role != "admin" and user.role != "manager":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins and Managers only")
 
     try:
         # Fetch all employees from the database
@@ -640,10 +640,11 @@ async def get_tasks_for_project(
                 name=task.name,
                 description=task.description,
                 due_date=task.due_date,
-                task_status=task.status,
+                status=task.status,
                 task_owner_id=task.task_owner_id,
                 task_owner_name=task_owner.name,
-                employee_names=[employee.name for employee in employees]
+                #employee_names=[employee.name for employee in employees]
+                members=[{"employee_id" : member.employee_id, "name" : member.name} for member in employees]
             ))
 
         # Step 5: Return the response in the required format
@@ -683,8 +684,7 @@ async def update_task(
             db_task.description = task_update.description
         if task_update.due_date:
             db_task.due_date = task_update.due_date
-        if task_update.task_status:
-            db_task.status = task_update.task_status
+
 
         # Step 4: Update assigned employees if provided
         if task_update.employee_ids is not None:
@@ -900,7 +900,8 @@ async def get_task_by_id(
             raise HTTPException(status_code=404, detail="Task owner not found")
 
         # Fetch employees assigned to the task (if any)
-        employees = db.query(DBEmployee).join(EmployeeTask).filter(EmployeeTask.task_id == task.task_id).all()
+        members = db.query(DBEmployee).join(EmployeeTask).filter(EmployeeTask.task_id == task.task_id, DBEmployee.role == "member").all()
+   
 
         # Return the task details along with related information
         return TaskResponse(
@@ -913,7 +914,8 @@ async def get_task_by_id(
             task_owner_name=task_owner.name,
             project_id=task.project_id,
             project_name=project.name,
-            employee_names=[employee.name for employee in employees]
+            #employee_names=[employee.name for employee in employees]
+            members=[{"employee_id" : member.employee_id, "name" : member.name} for member in members],
         )
 
     except HTTPException as e:

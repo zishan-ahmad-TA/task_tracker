@@ -56,6 +56,7 @@ const ProjectCard = ({ projects, fetchProjects, onEditClick, onViewClick }) => {
                 toastTitle={isError ? "Error Occurred ❌" : "All Set! ✅"}
             />
             <div className={styles.ProjectContainer}>
+                <div className = {styles.ListTitle}>Projects</div>
                 {projects.map((project, index) => (
                     <ListCard
                         key={index}

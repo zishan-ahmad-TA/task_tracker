@@ -16,7 +16,8 @@ const KpiCard = ({ title, Icon, color, buttonTitle, kpiValue, onClick = () => { 
             </div>
 
             <p className={styles.KpiValue}>{kpiValue}</p>
-            <button className={styles.Button} style={{ background: color }} onClick={onClick}>{buttonTitle}</button>
+            {buttonTitle && <button className={styles.Button} style={{ background: color }} onClick={onClick}>{buttonTitle}</button>}
+
         </div>
     )
 }
