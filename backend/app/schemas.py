@@ -45,6 +45,10 @@ class ProjectResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class ProjectComplete(BaseModel):
+    project_id: int
+    project_status: str
+
 class ProjectCreate(BaseModel):
     project_name: str
     description: Optional[str] = None

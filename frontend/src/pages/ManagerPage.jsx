@@ -115,12 +115,12 @@ const ManagerPage = ({ userDetails }) => {
   };
 
   const handleViewTasks = async (projectId) => {
-    if(!projectId) return;
+    if (!projectId) return;
     try {
       const projectDetailData = await apiRequest(`/projects/${projectId}`);
       setSelectedProject(projectDetailData);
-    } 
-    
+    }
+
     catch (error) {
       console.error("Error fetching task details:", error);
       setIsError(true);
@@ -214,7 +214,7 @@ const ManagerPage = ({ userDetails }) => {
   };
 
   const fetchTasks = async (projectID) => {
-    if(!projectID) return;
+    if (!projectID) return;
     try {
       const taskData = await apiRequest(`/projects/tasks/${projectID}`);
       setTasks(taskData.tasks);
@@ -241,14 +241,14 @@ const ManagerPage = ({ userDetails }) => {
   }, []);
 
   useEffect(() => {
-    if(projects[0] != null){
+    if (projects[0] != null) {
       fetchTasks(projects[0]?.project_id);
       setSelectedProject(projects[0])
     }
   }, [projects])
 
   useEffect(() => {
-    if(selectedProject != null){
+    if (selectedProject != null) {
       fetchTasks(selectedProject.project_id);
     }
   }, [selectedProject])
@@ -278,7 +278,7 @@ const ManagerPage = ({ userDetails }) => {
         />
 
       </DialogComponent>
-      
+
       <DialogComponent
         open={isEditTaskModalOpen}
         onOpenChange={closeEditTask}
@@ -294,7 +294,7 @@ const ManagerPage = ({ userDetails }) => {
           formData={taskEditData}
           onInputChange={handleEditInput}
         />
-    
+
       </DialogComponent>
 
       <DialogComponent
@@ -313,10 +313,10 @@ const ManagerPage = ({ userDetails }) => {
 
 
       <ToastComponent
-            open={isToastOpen}
-            setOpen={setIsToastOpen}
-            toastMessage={toastMessage}
-            toastTitle={isError ? "Error Occurred ❌" : "All Set! ✅"}
+        open={isToastOpen}
+        setOpen={setIsToastOpen}
+        toastMessage={toastMessage}
+        toastTitle={isError ? "Error Occurred ❌" : "All Set! ✅"}
       />
 
       <Navbar navTitle={`Welcome ${userDetails.name}!`}
@@ -329,44 +329,40 @@ const ManagerPage = ({ userDetails }) => {
         <div className={styles.FirstColumn}>
           <div className={styles.KpisContainer}>
 
-
-          <KpiCard title="Total Projects"
-              Icon={VscFileSymlinkDirectory}
-              color='#E59178'
-              kpiValue={totalProjects}
-              buttonTitle="Shaping Ideas"
-            //   onClick={() => setIsAddProjectModalOpen(true)} 
-            />
-
-
-          <KpiCard title="Total Tasks"
+            <KpiCard title="Total Tasks"
               Icon={FaUsers}
               color="#82C468"
               kpiValue={totalTasks}
               buttonTitle="Add new task"
               onClick={() => { setIsAddTaskModalOpen(true) }}
             />
-            
- 
-          
+
+            <KpiCard title="Total Projects"
+              Icon={VscFileSymlinkDirectory}
+              color='#E59178'
+              kpiValue={totalProjects}
+            //   onClick={() => setIsAddProjectModalOpen(true)} 
+            />
+
+
           </div>
           <div className={styles.TeamRow}>
-            <ProjectCard  
-                projects={projects}
-                fetchProjects={fetchProjects}
-                onViewClick={handleViewTasks}
-                /> 
+            <ProjectCard
+              projects={projects}
+              fetchProjects={fetchProjects}
+              onViewClick={handleViewTasks}
+            />
           </div>
         </div>
 
         <div className={styles.ProjectColumn}>
-          <TaskCard 
+          <TaskCard
             tasks={tasks}
             fetchTasks={fetchTasks}
-            projectId = {selectedProject?.project_id}
+            projectId={selectedProject?.project_id}
             isEditing={isEditTaskModalOpen}
             onEditClick={openEditTask}
-            onViewClick={handleViewTask} 
+            onViewClick={handleViewTask}
           />
         </div>
       </div>

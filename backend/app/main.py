@@ -170,6 +170,7 @@ async def get_project_by_id(
             EmployeeProject.project_id == project.project_id, DBEmployee.role == "member"
         ).all()
 
+
         # Return the project details
         return ProjectResponse(
             project_id=project.project_id,
@@ -213,7 +214,7 @@ async def create_project(
             start_date=project.start_date,
             end_date=project.end_date,
             project_owner_id=user.employee_id,  # Extract owner from logged-in user
-            project_status="In Progress"  # Default project status
+            project_status="Idle"  # Default project status
         )
 
         db.add(db_project)
@@ -333,6 +334,40 @@ async def update_project(
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+    
+#Update Project Status to Completed (ADMIN)
+@app.post("/projects/mark-complete/")
+async def complete_project(
+    project: ProjectComplete,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt)
+):
+    if user.role != "manager":
+        raise HTTPException(status_code=403, detail="Access forbidden: Managers only")
+    
+    try:
+        db_project = db.query(DBProject).filter(DBProject.project_id == project.project_id).first()
+
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        db_project.project_status = project.project_status
+
+        db.commit()
+        
+        return {
+            "project_id" : db_project.project_id,
+            "project_status" : db_project.project_status
+        }
+
+    except HTTPException as e:
+        raise e  # Return explicitly raised HTTP exceptions
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
+
+
+
 
 #Delete Project by ID (ADMIN) 
 @app.delete("/projects/{project_id}", response_model=dict)
