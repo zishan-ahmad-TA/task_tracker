@@ -21,6 +21,7 @@ const ManagerPage = ({ userDetails }) => {
   const apiRequest = useApiRequest();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTaskLoading, setIsTaskLoading] = useState(true);
   const [tasks, setTasks] = useState([]);
   const [totalProjects, setTotalProjects] = useState('NA');
   const [totalTasks, setTotalTasks] = useState('NA');
@@ -216,12 +217,16 @@ const ManagerPage = ({ userDetails }) => {
   const fetchTasks = async (projectID) => {
     if (!projectID) return;
     try {
+      setIsTaskLoading(true);
       const taskData = await apiRequest(`/projects/tasks/${projectID}`);
       setTasks(taskData.tasks);
       setTotalTasks(taskData.task_count)
 
     } catch (err) {
       console.error("Error fetching tasks ", err)
+    }
+    finally{
+      setIsTaskLoading(false);
     }
   };
 
@@ -363,6 +368,7 @@ const ManagerPage = ({ userDetails }) => {
             isEditing={isEditTaskModalOpen}
             onEditClick={openEditTask}
             onViewClick={handleViewTask}
+            isLoading={isTaskLoading}
           />
         </div>
       </div>

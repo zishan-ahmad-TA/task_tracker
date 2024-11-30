@@ -4,8 +4,9 @@ import DialogComponent from '../ui-elements/Dialog';
 import ToastComponent from '../ui-elements/Toast';
 import useApiRequest from '../../hooks/apiRequest';
 import { useState } from 'react';
+import Throbber from '../ui-elements/Throbber';
 
-const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user , del}) => {
+const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user, del, isLoading }) => {
 
     const apiRequest = useApiRequest();
     const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
@@ -16,7 +17,7 @@ const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user
 
     const closeDeleteTask = () => {
         setIsDeleteTaskModalOpen(false);
-    }
+    };
 
     const deleteTasks = async (taskId) => {
         if (!taskId) return;
@@ -26,31 +27,30 @@ const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user
             setIsError(false);
             setToastMessage("The task was deleted successfully!");
             setIsToastOpen(true);
-            if(!user)
+            if (!user) {
                 await fetchTasks(projectId);
-            else
-                await fetchTasks(projectId, user.employee_id)
+            } else {
+                await fetchTasks(projectId, user.employee_id);
+            }
             setTaskIdToDelete(null);
-        }
-
-        catch (error) {
+        } catch (error) {
             setToastMessage("Failed to delete task");
             setIsError(true);
             setIsToastOpen(true);
             console.error(error);
         }
-
     };
 
     return (
         <>
-            <DialogComponent open={isDeleteTaskModalOpen}
+            <DialogComponent
+                open={isDeleteTaskModalOpen}
                 onOpenChange={closeDeleteTask}
                 title="Delete task"
                 description="Are you sure you want to delete this task?"
                 buttonText="Delete"
                 buttonColor="#ff4d3d"
-                onSubmit={() => deleteTasks(taskIdToDelete)} 
+                onSubmit={() => deleteTasks(taskIdToDelete)}
             />
 
             <ToastComponent
@@ -61,32 +61,38 @@ const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user
             />
 
             <div className={styles.ProjectContainer}>
-                <div className = {styles.ListTitle}>Tasks</div>
-                {tasks.map((task, index) => (
-                    <ListCard
-                        key={index}
-                        label={task.name}
-                        value={task.description}
-                        status={task.status}
-                        onDeleteIconClick={() => {
-                            setIsDeleteTaskModalOpen(true);
-                            setTaskIdToDelete(task.task_id);
-                        }}
+                <div className={styles.ListTitle}>Tasks</div>
 
-                        isDelete = {del}
+                {isLoading ? (
+                    <div className={styles.ThrobberContainer}>
+                        <Throbber />
+                    </div>
 
-                        onEditIconClick={() => {
-                            onEditClick(task.task_id);
-                        }}
-                        listClickable={true}
-                        onLabelClick={() => onViewClick(task.task_id)}
-                    />
-                ))}
+                ) : tasks.length === 0 ? (
+                    <div className={styles.NoTasks}>No Tasks Found</div>
+                ) : (
+                    tasks.map((task, index) => (
+                        <ListCard
+                            key={index}
+                            label={task.name}
+                            value={task.description}
+                            status={task.status}
+                            onDeleteIconClick={() => {
+                                setIsDeleteTaskModalOpen(true);
+                                setTaskIdToDelete(task.task_id);
+                            }}
+                            isDelete={del}
+                            onEditIconClick={() => {
+                                onEditClick(task.task_id);
+                            }}
+                            listClickable={true}
+                            onLabelClick={() => onViewClick(task.task_id)}
+                        />
+                    ))
+                )}
             </div>
-
         </>
     );
 };
-
 
 export default TaskCard;
