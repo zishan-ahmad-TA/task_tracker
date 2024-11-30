@@ -7,7 +7,7 @@ import TooltipComponent from '../ui-elements/Tooltip';
 const ListCard = ({
     label = "", value = "",
     status = "",
-    showStatusIcon = true, isWorkItems = true,
+    showStatusIcon = true, isWorkItems = true, isDelete = true,
     listClickable = false,
     onDeleteIconClick = () => { },
     onEditIconClick = () => { },
@@ -45,11 +45,13 @@ const ListCard = ({
                                 </div>
                             </TooltipComponent>
 
-                            <TooltipComponent tooltipText="Delete">
-                                <div onClick={onDeleteIconClick}>
-                                    <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
-                                </div>
-                            </TooltipComponent>
+                            {isDelete &&
+                                <TooltipComponent tooltipText="Delete">
+                                    <div onClick={onDeleteIconClick}>
+                                        <MdDelete size='20px' color='#ff4d3d' style={{ cursor: 'pointer' }} />
+                                    </div>
+                                </TooltipComponent>
+                            }
                         </>
                     }
                 </div>

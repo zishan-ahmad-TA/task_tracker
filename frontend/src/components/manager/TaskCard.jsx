@@ -5,7 +5,7 @@ import ToastComponent from '../ui-elements/Toast';
 import useApiRequest from '../../hooks/apiRequest';
 import { useState } from 'react';
 
-const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick }) => {
+const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick, user , del}) => {
 
     const apiRequest = useApiRequest();
     const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
@@ -26,7 +26,10 @@ const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick }) =>
             setIsError(false);
             setToastMessage("The task was deleted successfully!");
             setIsToastOpen(true);
-            await fetchTasks(projectId);
+            if(!user)
+                await fetchTasks(projectId);
+            else
+                await fetchTasks(projectId, user.employee_id)
             setTaskIdToDelete(null);
         }
 
@@ -69,6 +72,8 @@ const TaskCard = ({ tasks, projectId, fetchTasks, onEditClick, onViewClick }) =>
                             setIsDeleteTaskModalOpen(true);
                             setTaskIdToDelete(task.task_id);
                         }}
+
+                        isDelete = {del}
 
                         onEditIconClick={() => {
                             onEditClick(task.task_id);

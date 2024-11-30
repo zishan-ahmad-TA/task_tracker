@@ -200,10 +200,10 @@ class EmployeeProjectsListResponse(BaseModel):
     # Response model for a single task
 class EmployeeTaskResponse(BaseModel):
     task_id: int
-    task_name: str
+    name: str
     description: str
     due_date: datetime
-    task_status: str
+    status: str
     project_id: int
     project_name: str
     task_owner_id: int
@@ -217,5 +217,8 @@ class EmployeeTasksListResponse(BaseModel):
     tasks: List[EmployeeTaskResponse]
     task_count: int
 
+class UpdateTaskStatusRequest(BaseModel):
+    task_id: int
+    new_status: str
 
 

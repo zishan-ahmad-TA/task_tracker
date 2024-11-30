@@ -137,7 +137,7 @@ async def get_projects(
         print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-# Get project by id (ADMIN / MANAGER only)
+# Get project by id (ADMIN / MANAGER / EMPLOYEE)
 @app.get("/projects/{project_id}", response_model=ProjectResponse)
 async def get_project_by_id(
     project_id: int, 
@@ -145,7 +145,7 @@ async def get_project_by_id(
     user: DBEmployee = Depends(verify_jwt)  # If you want to validate user role or permissions
 ):
 
-    if user.role != "admin" and user.role != "manager":
+    if user.role != "admin" and user.role != "manager" and user.role != "member":
         raise HTTPException(status_code=403, detail="Access forbidden: Unauthorized User")
 
     try:
@@ -270,8 +270,8 @@ async def update_project(
     user: DBEmployee = Depends(verify_jwt)
 ):
     # Only admins can update projects
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    #if user.role != "admin":
+    #    raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
 
     try:
         
@@ -558,6 +558,49 @@ async def update_employee_role(
         # Log the exception for debugging (not shown here)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
+@app.put("/tasks/update-status/")
+async def update_task_status(
+    request: UpdateTaskStatusRequest,
+    db: Session = Depends(get_db),
+    user: DBEmployee = Depends(verify_jwt),
+):
+    
+    # Only "member" (employee assigned to the task) or "manager/admin" can update task status
+    if user.role not in {"member", "manager", "admin"}:
+        raise HTTPException(status_code=403, detail="Access forbidden: Insufficient permissions.")
+
+    try: 
+        # Fetch the task from the database
+        task = db.query(DBTask).filter(DBTask.task_id == request.task_id).first()
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+
+        # Update the task status
+        task.status = request.new_status
+
+        # Commit the changes to the database
+        try:
+            db.commit()
+            db.refresh(task)
+            return {
+                "task_id": task.task_id,
+                "description": task.description,
+                "status": task.status,
+                "due_date": task.due_date,
+                "owner_id": task.task_owner_id,
+            }
+        except Exception as e:
+            db.rollback()
+            print(e)
+            raise HTTPException(status_code=500, detail="An error occurred while updating task status") from e
+    except HTTPException as e:
+        print(e)
+        raise e  
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
 # Logout
@@ -848,10 +891,11 @@ async def get_projects_for_employee(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 
-# Get all tasks for a specific employee
-@app.get("/employees/{employee_id}/tasks", response_model=EmployeeTasksListResponse)
+# Get all tasks for a specific employee and project
+@app.get("/projects/{project_id}/employees/{employee_id}/tasks", response_model=EmployeeTasksListResponse)
 async def get_tasks_for_employee(
     employee_id: int,
+    project_id: int,
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
 ):
@@ -867,7 +911,7 @@ async def get_tasks_for_employee(
 
         # Step 2: Fetch all tasks assigned to the employee
         assigned_tasks = db.query(DBTask).join(EmployeeTask).filter(
-            EmployeeTask.employee_id == employee_id
+            EmployeeTask.employee_id == employee_id, DBTask.project_id == project_id
         ).all()
 
         # Step 3: Prepare the response
@@ -886,10 +930,10 @@ async def get_tasks_for_employee(
             # Add task details to the response list
             task_list.append(EmployeeTaskResponse(
                 task_id=task.task_id,
-                task_name=task.name,
+                name=task.name,
                 description=task.description,
                 due_date=task.due_date,
-                task_status=task.status,
+                status=task.status,
                 project_id=task.project_id,
                 project_name=project.name,
                 task_owner_id=task.task_owner_id,
@@ -917,7 +961,7 @@ async def get_task_by_id(
 ):
 
     try:
-        print("hello")
+
         # Fetch the task from the database
         task = db.query(DBTask).filter(DBTask.task_id == task_id).first()
 

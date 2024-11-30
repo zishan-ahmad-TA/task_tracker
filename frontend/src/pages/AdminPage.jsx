@@ -150,6 +150,8 @@ const AdminPage = ({ userDetails }) => {
         employee_id: changeRoleData.employee.value,
         new_role: changeRoleData.role.value
       };
+
+      console.log(payload)
       
       await apiRequest('/change-role', 'PUT', payload);
 
