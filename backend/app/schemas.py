@@ -1,10 +1,8 @@
-# schemas.py
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional
 
 
-# Pydantic model for Project
 class ProjectBase(BaseModel):
     project_name: str
     description: Optional[str] = None
@@ -73,7 +71,6 @@ class ProjectListResponse(BaseModel):
     projects: List[ProjectResponse]
     project_count: int
 
-# Pydantic model for Task
 class TaskBase(BaseModel):
     name: str
     description: str
@@ -93,7 +90,6 @@ class Task(TaskBase):
     class Config:
         orm_mode = True
 
-# Task response model for individual tasks
 class TaskResponse(BaseModel):
     task_id: int
     name: str
@@ -102,28 +98,21 @@ class TaskResponse(BaseModel):
     status: str
     task_owner_id: int
     task_owner_name: str
-    #employee_names: List[str]  # Names of employees assigned to the task
     members: List[EmployeeBriefResponse]
 
     class Config:
         orm_mode = True
 
-# Response model for the list of tasks
 class TaskListResponse(BaseModel):
     tasks: List[TaskResponse]
     task_count: int
 
-# Model for updating a task
 class TaskUpdate(BaseModel):
     name: str
     description: Optional[str] = None
     due_date: datetime
-    #task_status: str
     employee_ids: List[int]
 
-
-
-# Pydantic model for Employee
 class EmployeeBase(BaseModel):
     name: str
     email_id: str
@@ -177,8 +166,6 @@ class EmployeeListResponse(BaseModel):
     employees: List[EmployeeResponse]
     employee_count: int
  
-
-# Response model for a single project
 class EmployeeProjectResponse(BaseModel):
     project_id: int
     project_name: str
@@ -192,12 +179,10 @@ class EmployeeProjectResponse(BaseModel):
     class Config:
         orm_mode = True
 
-# Response model for list of projects assigned to an employee
 class EmployeeProjectsListResponse(BaseModel):
     projects: List[EmployeeProjectResponse]
     project_count: int
 
-    # Response model for a single task
 class EmployeeTaskResponse(BaseModel):
     task_id: int
     name: str
@@ -212,7 +197,6 @@ class EmployeeTaskResponse(BaseModel):
     class Config:
         orm_mode = True
 
-# Response model for list of tasks assigned to an employee
 class EmployeeTasksListResponse(BaseModel):
     tasks: List[EmployeeTaskResponse]
     task_count: int

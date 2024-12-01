@@ -103,19 +103,16 @@ async def callback(code: str, db: Session = Depends(get_db)):
     return redirect_response
 
 def verify_jwt(request: Request, db: Session = Depends(get_db)):
-    # Extract JWT from the access_token cookie
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Missing access token")
 
     try:
-        # Decode and verify the JWT
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         exp = payload.get("exp")
         if datetime.now(timezone.utc).timestamp() > exp:
             raise HTTPException(status_code=401, detail="Token has expired")
 
-        # Fetch user from the database
         user = db.query(DBEmployee).filter(DBEmployee.employee_id == payload.get("employee_id")).first()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
