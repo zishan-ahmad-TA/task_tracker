@@ -96,9 +96,10 @@ async def callback(code: str, db: Session = Depends(get_db)):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        secure=True,
         max_age=3600,
-        samesite="Strict"
+        #Enable in Prod
+        # secure=True,
+        # samesite="Strict"
     )
     return redirect_response
 
