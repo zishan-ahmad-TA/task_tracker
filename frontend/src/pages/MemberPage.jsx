@@ -135,7 +135,7 @@ const MemberPage = ({ userDetails }) => {
         task_id: changeTaskStatus.task_id,
       };
       console.log(payload)
-      await apiRequest('/tasks/update-status/', 'PUT', payload);
+      await apiRequest('/tasks/update-status', 'PUT', payload);
       closeAddTask();
       setIsError(false);
       setToastMessage("Success! Your task status has been updated!");
