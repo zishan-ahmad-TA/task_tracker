@@ -20,7 +20,7 @@ load_dotenv()
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:8000/callback"
+REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 SECRET_KEY = os.getenv("JWT_SECRET")  
 ALGORITHM = "HS256"
