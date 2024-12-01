@@ -96,9 +96,10 @@ async def callback(code: str, db: Session = Depends(get_db)):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        max_age=3600,  
+        secure=True,
+        max_age=3600,
+        samesite="Strict"
     )
-
     return redirect_response
 
 def verify_jwt(request: Request, db: Session = Depends(get_db)):
