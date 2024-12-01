@@ -38,6 +38,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins="*", 
@@ -81,7 +82,7 @@ async def get_user_details(request: Request, db: Session = Depends(get_db)):
     
 
 # Get all projects (ADMIN)
-@app.get("/projects/", response_model=ProjectListResponse)
+@app.get("/projects", response_model=ProjectListResponse)
 async def get_projects(
     db: Session = Depends(get_db),
     user: DBEmployee = Depends(verify_jwt)
@@ -195,7 +196,7 @@ async def get_project_by_id(
 
 
 # Create a new project with assigned managers and employees (ADMIN)
-@app.post("/projects/", response_model=ProjectCreate)
+@app.post("/projects", response_model=ProjectCreate)
 async def create_project(
     project: ProjectBase,
     db: Session = Depends(get_db),
@@ -336,7 +337,7 @@ async def update_project(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
     
 #Update Project Status to Completed (ADMIN)
-@app.post("/projects/mark-complete/")
+@app.post("/projects/mark-complete")
 async def complete_project(
     project: ProjectComplete,
     db: Session = Depends(get_db),
@@ -402,7 +403,7 @@ async def delete_project(
 
 
 # Get all managers (ADMIN)
-@app.get("/managers/", response_model=ManagerListResponse)
+@app.get("/managers", response_model=ManagerListResponse)
 async def get_all_managers(
         db: Session = Depends(get_db), 
         user: DBEmployee = Depends(verify_jwt)
@@ -436,7 +437,7 @@ async def get_all_managers(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all members (ADMIN)
-@app.get("/members/", response_model=MemberListResponse)
+@app.get("/members", response_model=MemberListResponse)
 async def get_all_members(
         db: Session = Depends(get_db), 
         user: DBEmployee = Depends(verify_jwt)
@@ -470,7 +471,7 @@ async def get_all_members(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Get all employees (ADMIN, MANAGER)
-@app.get("/employees/", response_model=EmployeeListResponse)
+@app.get("/employees", response_model=EmployeeListResponse)
 async def get_all_employees(
         db: Session = Depends(get_db), 
         user: DBEmployee = Depends(verify_jwt)
@@ -505,7 +506,7 @@ async def get_all_employees(
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
 # Change Roles (ADMIN)
-@app.put("/change-role/", response_model=EmployeeResponse)
+@app.put("/change-role", response_model=EmployeeResponse)
 async def update_employee_role(
     request: UpdateRoleRequest,
     db: Session = Depends(get_db),
@@ -558,7 +559,7 @@ async def update_employee_role(
         # Log the exception for debugging (not shown here)
         raise HTTPException(status_code=500, detail="An unexpected error occurred") from e
 
-@app.put("/tasks/update-status/")
+@app.put("/tasks/update-status")
 async def update_task_status(
     request: UpdateTaskStatusRequest,
     db: Session = Depends(get_db),
