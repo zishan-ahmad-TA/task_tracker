@@ -215,7 +215,7 @@ async def create_project(
             start_date=project.start_date,
             end_date=project.end_date,
             project_owner_id=user.employee_id,  # Extract owner from logged-in user
-            project_status="Idle"  # Default project status
+            project_status="In Progress"  # Default project status
         )
 
         db.add(db_project)
