@@ -20,7 +20,7 @@ const Login = () => {
         </button>
 
         <p className={styles.FooterText}>
-          Made with ❤️ by the team at Tiger Analytics.
+          Delivered by the team at Tiger Analytics.
         </p>
       </div>
     </div>
