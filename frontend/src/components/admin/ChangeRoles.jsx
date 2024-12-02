@@ -16,7 +16,7 @@ const ChangeRoles = ({ employees, formData, onInputChange }) => {
     <div className={styles.ChangeRoles}>
       <fieldset className={styles.Fieldset}>
         <label className={styles.Label} htmlFor="employees">
-          Employees
+          Employee
         </label>
         <StaticSelect
           id="employees"
