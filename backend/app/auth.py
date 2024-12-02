@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import RedirectResponse
-import requests
+import requests 
 import os
 from jose import jwt, JWTError
 from dotenv import load_dotenv
